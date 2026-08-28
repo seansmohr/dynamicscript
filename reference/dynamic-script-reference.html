@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Mohr Insurance — Dynamic Sales Script Reference</title>
+<style>
+@page{size:letter;margin:0.65in 0.7in}
+*{box-sizing:border-box}
+body{margin:0;font:11pt/1.5 Georgia,"Times New Roman",serif;color:#141821;background:#fff}
+.wrap{max-width:7.1in;margin:0 auto;padding:24px 0}
+h1{font:700 26pt/1.15 Helvetica,Arial,sans-serif;letter-spacing:-.02em;margin:0 0 4px}
+.sub{font:11pt/1.4 Helvetica,Arial,sans-serif;color:#5a6478;margin:0 0 22px}
+h2{font:700 15pt/1.2 Helvetica,Arial,sans-serif;margin:30px 0 10px;padding:7px 0 7px 12px;
+   border-left:5px solid #1d4ed8;background:#eef3ff;letter-spacing:-.01em;page-break-after:avoid}
+h3{font:700 12pt/1.3 Helvetica,Arial,sans-serif;margin:20px 0 7px;color:#0b2f6b;page-break-after:avoid}
+h4{font:700 10pt/1.3 Helvetica,Arial,sans-serif;margin:14px 0 5px;color:#3a4761;
+   text-transform:uppercase;letter-spacing:.05em;page-break-after:avoid}
+p{margin:0 0 9px}
+.say{border-left:3px solid #1d4ed8;background:#f5f8ff;padding:9px 13px;margin:0 0 10px;color:#0b2f6b}
+.do{border-left:3px solid #d19a24;background:#fffaf0;padding:7px 13px;margin:0 0 10px;
+    font:italic 10pt/1.45 Helvetica,Arial,sans-serif;color:#7a5205}
+.stop{border-left:3px solid #c62828;background:#fdf1f1;padding:8px 13px;margin:0 0 10px;
+    font:700 10pt/1.45 Helvetica,Arial,sans-serif;color:#8c1f1f}
+.branch{border:1.5px solid #1d4ed8;border-radius:6px;padding:11px 14px;margin:12px 0;background:#fbfcff;page-break-inside:avoid}
+.branch .tag{display:inline-block;background:#1d4ed8;color:#fff;font:700 8.5pt Helvetica,Arial,sans-serif;
+    letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:99px;margin-bottom:8px}
+.branch.alt{border-color:#0e7c53} .branch.alt .tag{background:#0e7c53}
+.branch.warn{border-color:#c62828} .branch.warn .tag{background:#c62828}
+table{width:100%;border-collapse:collapse;margin:10px 0;font:10pt/1.4 Helvetica,Arial,sans-serif;page-break-inside:avoid}
+th,td{border:1px solid #ccd4e4;padding:6px 9px;text-align:left;vertical-align:top}
+th{background:#eef3ff;font-weight:700;color:#0b2f6b}
+td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
+.write{border:1.5px dashed #9aa6bd;border-radius:6px;padding:4px 10px;margin:4px 0 10px;min-height:22px;
+    font:10pt Helvetica,Arial,sans-serif;color:#8c96ab}
+.pill{display:inline-block;border:1px solid #ccd4e4;border-radius:99px;padding:1px 9px;font:9.5pt Helvetica,Arial,sans-serif;color:#3a4761;background:#f6f8fc}
+.page{page-break-before:always}
+.toc{font:10.5pt/1.9 Helvetica,Arial,sans-serif;columns:2;column-gap:28px}
+.toc a{color:#1d4ed8;text-decoration:none}
+.foot{margin-top:34px;padding-top:10px;border-top:1px solid #ccd4e4;font:9pt Helvetica,Arial,sans-serif;color:#7d879f}
+.map{font:9.5pt/1.5 Helvetica,Arial,sans-serif;background:#f6f8fc;border:1px solid #ccd4e4;border-radius:6px;padding:12px 14px;white-space:pre;overflow:auto}
+</style></head><body><div class="wrap">
+
+<h1>Mohr Insurance — Dynamic Sales Script</h1>
+<p class="sub">Branched reference &amp; agent worksheet · four avatars · umbrella priced from the CNA</p>
+
+<h2>How this script branches</h2>
+<div class="map">EVERY CALL
+  │
+  ├─ 1. Opening ─ greeting · recording · Medicare disclaimer
+  │     ├─ "Enrolled in Parts A &amp; B?" ────────── YES ──► AVATAR 4
+  │     ├─ "Make your own healthcare decisions?" ─ NO ──► STOP, get the POA on the line
+  │     ├─ Scope of Appointment ────────────────── NO ──► STOP, cannot present
+  │     └─ Goals loop (repeat until "nothing else")
+  │
+  ├─ 2. CNA ─ zip · DOB · work · SS · carrier · premium · deductible/MOOP
+  │          · health · Rx · DENTAL* · CHS* · SKILLED NURSING*      (* price the umbrella)
+  │     └─ On employer coverage? ── YES ──► skip Part B income + retirement assets
+  │
+  └─ AVATAR ROUTING
+        ├─ AVATAR 1  Employer coverage (over 20 employees)
+        │     └─ Delay A &amp; B → CMS L564 → Gold / Silver / Bronze → close
+        │        (no umbrella, no Supplement/Advantage presentation)
+        │
+        ├─ AVATAR 2  T65, not on Social Security   → manual enrollment paragraph
+        ├─ AVATAR 3  T65, on Social Security       → automatic enrollment paragraph
+        ├─ AVATAR 4  Currently on Medicare         → current plan review, then "already set"
+        │
+        └─ all three continue: Original Medicare → 20% exposure → Supplement →
+           Advantage → pricing with umbrella → which are you leaning → formal
+           recommendation → 3 steps (A / B / C) → underwriting urgency → address</div>
+
+<table>
+<tr><th>Avatar</th><th>How you land on it</th><th>What they get</th><th>Closing steps</th></tr>
+<tr><td><b>1. Employer coverage</b></td><td>Not on Medicare · employer group plan · <b>over 20 employees</b></td>
+    <td>Delay Part A &amp; B · CMS L564 · Gold / Silver / Bronze critical illness</td><td>Pick a tier, then address</td></tr>
+<tr><td><b>2. T65 — not on SS</b></td><td>Not on Medicare · not drawing Social Security</td>
+    <td>Manual enrollment · Supplement vs Advantage · umbrella</td><td>Scenario A</td></tr>
+<tr><td><b>3. T65 — on SS</b></td><td>Not on Medicare · drawing Social Security</td>
+    <td>Automatic enrollment · Supplement vs Advantage · umbrella</td><td>Scenario B</td></tr>
+<tr><td><b>4. Currently on Medicare</b></td><td>Already enrolled in Parts A &amp; B</td>
+    <td>Current plan review · Supplement vs Advantage · umbrella</td><td>Scenario C</td></tr>
+</table>
+<div class="do">An employer plan with <b>20 or fewer employees</b> makes Medicare the primary payer, so the "delay Part A and B" recommendation does not fit. Those clients run the T65 track instead.</div>
+
+<h2>Umbrella pricing — driven by three CNA answers</h2>
+<table>
+<tr><th>What they told you in the CNA</th><th class="n">Medicare Supplement</th><th class="n">Medicare Advantage</th></tr>
+<tr><td>Cancer / heart attack / stroke is a concern</td><td class="n">+$50</td><td class="n">+$50</td></tr>
+<tr><td>Skilled nursing is a concern</td><td class="n">+$50</td><td class="n">+$100</td></tr>
+<tr><td>Dental is important to them</td><td class="n">+$50</td><td class="n">included with the plan</td></tr>
+<tr><td><b>Maximum umbrella</b></td><td class="n"><b>$150</b></td><td class="n"><b>$150</b></td></tr>
+</table>
+<table>
+<tr><th>Quote</th><th>Formula</th></tr>
+<tr><td><b>Medicare Supplement</b></td><td>Plan G premium &nbsp;+&nbsp; Part D ≈ $10 &nbsp;+&nbsp; umbrella ($50 / $100 / $150) = <b>one monthly price</b></td></tr>
+<tr><td><b>Medicare Advantage</b></td><td>MAPD premium (usually $0) &nbsp;+&nbsp; umbrella ($50 / $100 / $150) = <b>one monthly price</b></td></tr>
+</table>
+<div class="do">Quote the single all-in number. Do not itemize it out loud unless they ask.</div>
+
+<div class="page"></div>
+<h2>1 · Opening</h2>
+
+<h3>Greeting and webinar confirmation</h3>
+<div class="say">"Hey [Name], this is [Agent name] with Mohr Insurance Services calling for our scheduled Medicare appointment… how are you today?"</div>
+<div class="do">Wait for their response.</div>
+<div class="say">"Thank you for booking the call today. Hopefully I'll be able to help you out and answer any questions."</div>
+
+<h3>Call recording disclosure</h3>
+<div class="say">"Now [Name], before we continue, I have to read these compliance disclosures before we dive in. You know we take compliance very seriously, so I need to let you know that <b>this call is being recorded for quality and compliance purposes.</b>"</div>
+
+<h3>Required Medicare disclaimer</h3>
+<div class="say">"We do not offer every plan available in your area. Any information I provide is limited to the plans we represent. You can always visit Medicare.gov or call 1-800-MEDICARE to review all available options."</div>
+<div class="say">"Now, almost done here!"</div>
+<div class="stop">Required verbatim. Do not paraphrase or skip.</div>
+
+<h3>Eligibility check <span class="pill">branch point</span></h3>
+<div class="say">"Before we go further, are you currently enrolled in Medicare Parts A and B?"</div>
+<div class="branch"><span class="tag">If yes</span><p>They are <b>Avatar 4 — Currently on Medicare.</b> They will get the current plan review instead of an enrollment paragraph, and Scenario C at the close.</p></div>
+<div class="say">"And do you personally make your own healthcare decisions?"</div>
+<div class="branch warn"><span class="tag">If no</span><p><b>Stop.</b> You cannot present or enroll without the authorized representative or power of attorney on the line. Ask who handles their healthcare decisions and get that person on the call, or reschedule with them present.</p></div>
+
+<h3>Scope of Appointment permission</h3>
+<div class="say">"Now for today's call, we may discuss: Medicare Advantage Plans · Medicare Supplement Plans · Prescription Drug Plans · Ancillary Products. Do I have your permission to discuss these options with you today?"</div>
+<div class="do">Wait for a <b>clear verbal YES.</b></div>
+<div class="branch warn"><span class="tag">If no</span><p><b>Do not proceed.</b> Without a Scope of Appointment on the recording you cannot discuss any of the four product categories.</p></div>
+
+<h3>Transition into the CNA — the goals loop</h3>
+<div class="say">"Perfect. I like to start with what's called a Client Needs Assessment. This helps me gather the right information and make sure I'm steering you in the best direction. But before we get started, I always like to ask: what would you like to accomplish today?"</div>
+<div class="do">Write down what they say — their words.</div>
+<div class="write">1.</div><div class="write">2.</div><div class="write">3.</div>
+<div class="say">"Perfect, so what I'm hearing is (repeat their goal). Does that sound about right?"</div>
+<div class="say">"Perfect, is there anything else you want to go over today?"</div>
+<div class="do"><b>Loop</b> until they have nothing else. You read every one of these back in the formal recommendation.</div>
+
+<div class="page"></div>
+<h2>2 · Client Needs Assessment</h2>
+
+<h3>Zip code</h3>
+<div class="say">"So for starters, what's your zip code?"</div>
+<div class="do">Repeat the zip code back. → "Awesome, got that down."</div>
+<div class="write">Zip:</div>
+
+<h3>Date of birth</h3>
+<div class="say">"Now what is your date of birth?" → "Perfect, got that here."</div>
+<div class="write">DOB: &nbsp;&nbsp;&nbsp; Age: &nbsp;&nbsp;&nbsp; Birth month:</div>
+
+<h3>Work status <span class="pill">branch point</span></h3>
+<div class="say">"Tell me a little bit about your current situation — are you still working, are you retired, what does that look like?"</div>
+<div class="branch"><span class="tag">If still working</span>
+  <div class="say" style="margin-bottom:6px">"Does your employer have over 20 employees?"</div>
+  <p><b>Over 20</b> → employer group plan stays primary → Avatar 1 track.<br>
+     <b>20 or fewer</b> → Medicare normally becomes primary → run the T65 track instead.</p></div>
+<div class="write">Work status:</div>
+
+<h3>Social Security status <span class="pill">branch point</span></h3>
+<div class="say">"Are you drawing Social Security yet?"</div>
+<div class="branch alt"><span class="tag">Yes</span><p>Automatically enrolled into A &amp; B · Part B deducted from their check · <b>Scenario B</b> at close.</p></div>
+<div class="branch alt"><span class="tag">No</span><p>We enroll them manually · billed quarterly for the first quarter · <b>Scenario A</b> at close.</p></div>
+
+<h3>Current insurance carrier and source <span class="pill">branch point</span></h3>
+<div class="say">"Tell me a little bit about your current health insurance — is that through your employer or through the marketplace?"</div>
+<div class="say">"What carrier is that with?" &nbsp;·&nbsp; "And is that an HMO… PPO?"</div>
+<div class="write">Source: &nbsp;&nbsp; Carrier: &nbsp;&nbsp; HMO / PPO:</div>
+
+<h3>Monthly premium</h3>
+<div class="say">"What are you paying for that right now on a month to month basis?"</div>
+<div class="write">$ &nbsp;/mo</div>
+
+<h3>Deductible and max out of pocket</h3>
+<div class="say">"And then you may not know this next part off the top of your head, but if you have your insurance card it should read off of there. What is your deductible and maximum out of pocket?"</div>
+<div class="write">Deductible: $ &nbsp;&nbsp;&nbsp; Max out of pocket: $</div>
+<div class="do">The max out of pocket is the entire basis of the employer-track pitch. Do not leave this blank.</div>
+<div class="say">"Have you hit that deductible or max out of pocket, and if so what happened?"</div>
+<div class="write">&nbsp;</div>
+
+<h3>Health history</h3>
+<div class="say">"And that leads me into my next question — sounds like you're pretty healthy <i>/ have a little bit of a health history</i>. Is there anything with your recent health we should know about in the past 5 years?"</div>
+<div class="do">Pick the half of that sentence that matches what you've heard so far. Underwriting matters here.</div>
+<div class="write">&nbsp;</div>
+<div class="say">"Okay, and are you taking any prescriptions right now, and what are they actively treating?"</div>
+<div class="write">&nbsp;</div>
+
+<h3>Dental importance <span class="pill">umbrella driver</span></h3>
+<div class="say">"My next question would be, is dental insurance important to you, and do you currently have that with your employer or through the marketplace?"</div>
+<div class="branch"><span class="tag">If yes</span><p><b>+$50 to the Medicare Supplement umbrella.</b> No effect on the Advantage umbrella — an Advantage plan already bundles dental.</p></div>
+
+<h3>Major exposures — the set-up</h3>
+<div class="say">"Now, in that webinar do you remember how we highlight major exposures?"</div>
+<div class="say">"Major exposures can really stem from any plan — whether it's your current plan with [carrier], or a Medicare Supplement or Advantage plan — but really in relation to two specific things."</div>
+
+<h3>Cancer, heart attack, stroke <span class="pill">umbrella driver</span></h3>
+<div class="say">"For starters — cancer, heart attack, stroke. Do we have any personal or family history with the big three?"</div>
+<div class="write">&nbsp;</div>
+<div class="say">"I really appreciate you sharing that with me… and the reason we bring this up — I'll share a personal note. My grandmother had cancer three times, and she was on Medicare and had great coverage, but even with that coverage she had to pay <b>$15,000</b> out of her own pocket for non-approved expenses. <b>Is something like that going to be a concern for you?</b>"</div>
+<div class="branch"><span class="tag">If yes</span><p><b>+$50 to both umbrellas.</b></p></div>
+
+<h3>Skilled nursing <span class="pill">umbrella driver</span></h3>
+<div class="say">"Now the next big exposure we see is skilled nursing. Do you have any personal or family history with that, and are you familiar with how that coverage functions with Medicare?"</div>
+<div class="say">"Medicare will help cover up to day 100 as long as you had a <b>3 day hospital stay</b> and are <b>showing signs of improvement</b>… but after day 100 you are responsible for all costs. And it's really important we focus on that 3 day hospital stay and showing signs of improvement."</div>
+<div class="say">"I had a client who was in skilled nursing for ten days and her insurance plan, Kaiser, said she was not improving and doing the exercises because she had a stroke — so they ended her care and she had to go home and pay <b>$20,000</b> out of pocket for home care. So I'm assuming this will be a concern as well?"</div>
+<div class="branch"><span class="tag">If yes</span><p><b>+$50 to the Supplement umbrella · +$100 to the Advantage umbrella</b> (the Advantage side is buying skilled nursing coverage).</p></div>
+<div class="say">"And yeah, we'll come back to that in greater detail, but I really just wanted to make sure you're aware of these exposures."</div>
+
+<div class="branch warn"><span class="tag">Employer coverage — skip ahead</span>
+<p>Skip the Part B income and retirement asset questions entirely and go straight to <b>Education (Employer)</b>.</p></div>
+
+<h3>Part B premium — income qualification <span class="pill">not on the employer track</span></h3>
+<div class="say">"Now, when you transition to Medicare you'll be responsible for a Part B premium — however that premium is going to be very dependent on your household income. Do you know where that's at at this moment in time?"</div>
+<div class="say">"And has that been pretty consistent over the last two years?" … "And the reason I ask is they always look back two years prior."</div>
+<div class="write">Income: &nbsp;&nbsp; Consistent 2 yrs:</div>
+
+<h3>Retirement assets <span class="pill">not on the employer track</span></h3>
+<div class="say">"And another thing that can impact your Part B premium, which not a lot of people think about — do you have any retirement accounts that have over $200,000 in qualified assets or more?"</div>
+<div class="say">"And the reason I ask is because when we plan to supplement our income with the money within those accounts, that can impact your Part B premium. Have you had the chance to talk to a retirement specialist yet?"</div>
+<div class="branch alt"><span class="tag">If no</span>
+<div class="say" style="margin:0">"Okay, well we have a full partnership on hand, so if you ever want to sit down and have that conversation it is a service we offer <b>free of charge</b>, and we can look at getting you scheduled for that once we're done here — okay?"</div></div>
+
+<h3>Close out the CNA</h3>
+<div class="say">"Awesome, that wraps up the needs assessment. Now we're going to walk through your options and answer the questions you had at the beginning."</div>
+
+<div class="page"></div>
+<h2>3 · Education — Avatar 1: Employer coverage</h2>
+<div class="do">This track ends here. These clients never see the Supplement / Advantage presentation or the umbrella.</div>
+
+<h3>Recommendation #1 — delay Part A and Part B</h3>
+<div class="say">"So right now this transition to Medicare does not make much sense for you, so my first recommendation would be to <b>delay Part A and Part B entirely.</b> You have a strong plan with your employer and your premiums are pretty low."</div>
+
+<h3>Peace of mind on penalties</h3>
+<div class="say">"And I want to make sure you are at peace of mind with penalties, since that's always a big concern. <b>You won't be penalized for delaying Medicare</b> since you have creditable coverage with your employer. Are we clear on that?"</div>
+<div class="do">Wait for the response. Do not move on without a yes.</div>
+
+<h3>CMS L564 — the hall pass</h3>
+<div class="say">"Now when you do decide to retire, or you lose that creditable coverage, that's when you take action. That's when you take <b>CMS L564</b> — it's a form you'll take to your HR department and they'll help you fill it out. Then you'll take that form and you're gonna submit it along with your application for Part A and Part B. That form is basically your <b>hall pass that voids all penalties.</b> Are we clear on that?"</div>
+
+<h3>Recommendation #2 — cover the gaps</h3>
+<div class="say">"Now my second recommendation would be to protect you from the gaps that employer plans typically leave behind."</div>
+<h4>Step 1 — reiterate their exposure</h4>
+<div class="say">"So right now, your employer plan has a max out of pocket of <b>[max OOP]</b>."</div>
+<h4>Step 2 — explain the risk</h4>
+<div class="say">"What this means is, god forbid you have a bad health year, it's very likely you will pay <b>[max OOP]</b> for your healthcare <b>plus</b> potentially have loss of income — which are two significant exposures."</div>
+<h4>Step 3 — present Gold / Silver / Bronze</h4>
+<div class="say">"That's where our <b>Gold, Silver and Bronze</b> options come in — they're designed to cover those big out-of-pocket risks while you stay on your employer plan."</div>
+<div class="say">"Now [first name], I want you to write down Gold, Silver and Bronze, and let me know once you've got that down."</div>
+<div class="do">Wait for confirmation before <b>each</b> tier below. One at a time — this pace is the whole close.</div>
+<table>
+<tr><th>Tier</th><th>Cancer</th><th>Heart attack &amp; stroke</th><th class="n">Total benefit</th><th class="n">Monthly</th></tr>
+<tr><td><b>Gold</b></td><td>$30,000</td><td>$30,000</td><td class="n">$60,000</td><td class="n">$150</td></tr>
+<tr><td><b>Silver</b></td><td>$20,000</td><td>$20,000</td><td class="n">$40,000</td><td class="n">$100</td></tr>
+<tr><td><b>Bronze</b></td><td>$10,000</td><td>$10,000</td><td class="n">$20,000</td><td class="n">$50</td></tr>
+</table>
+<div class="say">"Awesome, so based on these prices, which option do you feel like you can comfortably afford on top of your employer coverage?"</div>
+<div class="do"><b>Ask, then stop talking.</b></div>
+<div class="say">"Sounds good, so what would be a good address to send policy packets and information?"</div>
+<div class="do">Handle objections and <b>always end with a pre-emptive close.</b></div>
+
+<div class="page"></div>
+<h2>4 · Medicare Education — Avatars 2, 3 and 4</h2>
+
+<h3>How you get onto Medicare <span class="pill">branch point</span></h3>
+<div class="branch alt"><span class="tag">Avatar 3 — on Social Security</span>
+<div class="say" style="margin:0">"So [name], what is going to happen is, since you are on Social Security, you are going to be <b>automatically enrolled</b> into Original Medicare Part A and Part B."</div></div>
+<div class="branch alt"><span class="tag">Avatar 2 — not on Social Security</span>
+<div class="say" style="margin:0">"So [name], since you are not on Social Security, we will have to get you <b>manually enrolled</b> into Part A and Part B — and we will make this process as easy as possible for you. When the time comes, three months before your birth month, we will be sending you the instructions to get this done, and Brandon has a very detailed video to help you with this step. It shouldn't take long — maybe about 10 minutes."</div></div>
+<div class="branch alt"><span class="tag">Avatar 4 — already on Medicare</span>
+<p>Run the current plan review first — what they have now, carrier, plan letter, what they pay, Part D / dental / vision, why they're shopping, and which enrollment window you're working in. Then:</p>
+<div class="say" style="margin:0">"So [name], you're already enrolled in Parts A and B, so that foundation is set — there's nothing to do there. What I want to do is make sure you understand exactly what that foundation covers and where it leaves you exposed, because that's what drives which direction we go from here."</div>
+<div class="do" style="margin:8px 0 0">Outside guaranteed issue, a Supplement means <b>medical underwriting</b> and they can be declined. Set that expectation before you present, and keep the Advantage option alive as the fallback.</div></div>
+
+<div class="say">"Now, Original Medicare is what we call <b>the foundation of Medicare</b>. I believe Brandon mentioned this in the webinar, but let me break it down for you again."</div>
+
+<h3>Introduction to Original Medicare</h3>
+<div class="say">"<b>Part A</b> covers hospital expenses and is premium-free."</div>
+<div class="say">"<b>Part B</b> covers doctor visits and medical services and has a monthly premium of <b>$202</b>."</div>
+<div class="branch"><span class="tag">If on Social Security</span>
+<div class="say" style="margin:0">"Since you're on Social Security, the Part B premium will be <b>deducted directly from your check</b>, so you won't need to worry about making separate payments."</div></div>
+<div class="branch"><span class="tag">If not on Social Security</span>
+<div class="say" style="margin:0">"Since you are not on Social Security, they are going to <b>bill you for the first quarter</b> for your Part B premium, and after that we can set up your banking info to do a monthly draft rather than paying it quarterly."</div></div>
+<div class="say">"Unfortunately, there's no way to avoid the Part B premium — it's just a standard Medicare requirement. Any questions so far?"</div>
+
+<h3>The exposure in Original Medicare alone</h3>
+<div class="say">"Now, while Original Medicare is the foundation, we <b>never</b> recommend staying on it alone without additional coverage, because there's a lot of financial exposure with just Original Medicare."</div>
+<div class="say">"The biggest risk is the <b>20% coinsurance with no limit</b>. A $100,000 medical bill means you're responsible for <b>$20,000</b> out of pocket. And there is no cap on these costs, leaving you financially vulnerable."</div>
+<div class="say">"So to protect you, we'll discuss two options: a <b>Medicare Supplement plan</b>, also called Medigap, and <b>Medicare Advantage</b>, which is Part C. Before I go into the details, do you have any questions so far?"</div>
+<div class="say">"Do you have a piece of paper in front of you right now?"</div>
+<div class="do">Do not move on until they have pen and paper.</div>
+
+<div class="page"></div>
+<h2>5 · Medicare Supplement education</h2>
+<div class="say">"This is what we call the <b>Cadillac of health insurance</b>, because it provides the best coverage available. Now, it does come at a higher cost."</div>
+<h4>✅ Comprehensive coverage</h4>
+<div class="say">"After you meet a <b>$283 annual deductible</b>, you are 100% covered for any medical costs. No matter the bill — $100,000 or even a million dollars — you won't pay anything beyond that $283 deductible. The reason it's called Medigap is because it covers the gaps that Original Medicare doesn't cover, that 20%. Does that make sense?"</div>
+<div class="do"><b>Get confirmation before moving forward.</b></div>
+<h4>✅ No network restrictions</h4>
+<div class="say">"You can see any doctor or hospital nationwide as long as they accept Medicare. So no concerns about being in or out of network."</div>
+<h4>✅ No prior authorization</h4>
+<div class="say">"Medicare Supplement plans are federally regulated, meaning that by law they must cover anything Original Medicare does — so no insurance denials. If Medicare approves a procedure, your supplement plan automatically has to cover the rest."</div>
+<h4>The guaranteed issue window</h4>
+<div class="say">"One thing to note before I finish up the Medicare Supplement plan is that you only have <b>one guaranteed issue period</b> to get a supplement plan, and that is when you first get onto Medicare. This means that if you elect not to go this route, if you want to switch in the future you will have to go through <b>medical underwriting</b> and can possibly be <b>denied</b> for that coverage later on."</div>
+<div class="say">"I know that's a lot of information, but do you have any questions on how a Medicare Supplement plan functions?"</div>
+
+<h2>6 · Medicare Advantage (Part C) education</h2>
+<div class="say">"This is a more affordable option compared to the supplement plan, and it's structured differently."</div>
+<h4>✅ Low monthly cost</h4>
+<div class="say">"Many plans have low monthly premiums, and it includes your medical, prescription drug coverage, and additional benefits like <b>dental, vision and hearing</b> at no extra cost."</div>
+<h4>⚠ Pay-as-you-go model</h4>
+<div class="say">"Unlike Medicare Supplement plans, you will pay co-pays and co-insurance for each service — doctor visits, hospital stays. Less predictable expenses if you have frequent medical needs."</div>
+<div class="say">"Think of Medicare Advantage as a <b>better version of your current health insurance coverage</b>. It essentially works the same way. I'm sure you have copays and coinsurance when you need medical care — Medicare Advantage works very similarly. The reason we say 9 times out of 10 it is a better version is because the plans usually have little to no deductible and very affordable copays."</div>
+<h4>⚠ Network restrictions</h4>
+<div class="say">"You must use doctors and hospitals within your plan's network to get full coverage. You can go out of network, but expect higher costs."</div>
+<div class="say">"That's the general overview of Medicare Advantage — any questions on how a Medicare Advantage plan functions?"</div>
+
+<div class="page"></div>
+<h2>7 · Pricing, recommendation and close</h2>
+<div class="say">"Now that we've gone over the benefits of both plans, let's talk about cost."</div>
+<table>
+<tr><th>Medicare Supplement (Medigap)</th><th class="n">$ / mo</th></tr>
+<tr><td>Plan G premium</td><td class="n">&nbsp;</td></tr>
+<tr><td>Part D drug plan</td><td class="n">≈ $10</td></tr>
+<tr><td>Umbrella ($50 / $100 / $150)</td><td class="n">&nbsp;</td></tr>
+<tr><td><b>Total monthly — one price</b></td><td class="n"><b>&nbsp;</b></td></tr>
+</table>
+<div class="say">"Once you meet the small annual deductible of $283 for the year, you owe <b>$0</b> for covered medical services — so no surprise bills."</div>
+<table>
+<tr><th>Medicare Advantage (Part C)</th><th class="n">$ / mo</th></tr>
+<tr><td>MAPD premium (usually $0)</td><td class="n">&nbsp;</td></tr>
+<tr><td>Umbrella ($50 / $100 / $150)</td><td class="n">&nbsp;</td></tr>
+<tr><td><b>Total monthly — one price</b></td><td class="n"><b>&nbsp;</b></td></tr>
+</table>
+<div class="say">"You'll just have some small copays for doctor and specialist visits."</div>
+
+<h3>Which option are they leaning toward?</h3>
+<div class="say">"Now that we've gone through both options and the detailed pricing breakdown, which route do you feel yourself leaning toward as of now?"</div>
+<div class="do"><b>PAUSE.</b> Let them answer.</div>
+<div class="say">"Okay, so you're leaning toward [Option 1 / 2]?"</div>
+<div class="do">Get their confirmation again.</div>
+
+<h3>Formal recommendation</h3>
+<div class="say">"Based on everything you shared today — <i>(read back your notes from the call)</i> — my formal recommendation would be the <b>[Supplement / Advantage] plan</b>, with umbrella coverage at <b>$[X]</b> a month, for about <b>$[total]</b> a month all in."</div>
+<div class="do"><b>PAUSE. The first one to talk loses.</b></div>
+
+<h3>The 3 simple steps <span class="pill">branch point</span></h3>
+<div class="say">"Do you still have that piece of paper? Perfect — I want you to write this down, because this is how we will get everything done, in these 3 simple steps."</div>
+<div class="branch"><span class="tag">Scenario A — T65, not on Social Security</span>
+<ol><li>We get your umbrella coverage set up for <b>$[X]</b> a month.</li>
+<li>We manually enroll you into Original Medicare Parts A &amp; B three months before your birth month — it takes about 10 minutes.</li>
+<li>We enroll you into your <b>[Supplement — 6 months / Advantage — 3 months]</b> before your 65th birthday.</li></ol></div>
+<div class="branch"><span class="tag">Scenario B — T65, on Social Security</span>
+<ol><li>We get your umbrella coverage set up for <b>$[X]</b> a month.</li>
+<li>Since you're on Social Security you'll be automatically enrolled into Parts A &amp; B — we just confirm that's all set.</li>
+<li>We enroll you into your <b>[Supplement — 6 months / Advantage — 3 months]</b> before your 65th birthday.</li></ol></div>
+<div class="branch"><span class="tag">Scenario C — already on Medicare / switching</span>
+<ol><li>We get your umbrella coverage set up for <b>$[X]</b> a month.</li>
+<li>We review your current plan and lock in your new <b>[Supplement / Advantage]</b> plan.</li>
+<li>Your new coverage kicks in on <b>[effective date]</b>.</li></ol></div>
+<div class="say">"<b>Step 1 is the only thing we need to knock out today.</b>"</div>
+
+<h3>Why we do Step 1 today</h3>
+<div class="say">"The reason we want to go ahead and handle this now is because we need to make sure we can get you <b>approved through underwriting</b>. That way, if for some reason one company doesn't approve of you, we still have time to pivot and find another option before your effective date."</div>
+<div class="say">"The other important part is once you're approved, this <b>locks in your rate based on your age right now</b> — so it's never going to jump because of your health later on."</div>
+<div class="say">"I'll handle the entire enrollment process for you. It's only a few quick health questions and we should be able to get everything wrapped up in the next few minutes. Now let me get everything pulled up for us."</div>
+<div class="say">"And what was going to be a good street address for you, so I make sure you receive your packages and cards?"</div>
+<div class="do">Move straight into the application. Don't ask permission — assume it.</div>
+
+<div class="foot">Mohr Insurance Services · Dynamic sales script reference. The interactive version routes the avatar and prices the umbrella for you — this document is the offline backup.</div>
+</div></body></html>
