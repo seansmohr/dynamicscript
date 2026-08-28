@@ -151,7 +151,11 @@ button,input,select,textarea{font:inherit;color:inherit}
 }
 .f textarea{min-height:78px;resize:vertical;line-height:1.5}
 .f input:focus,.f select:focus,.f textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
-.f .hint{font-size:12px;color:var(--ink-3);margin-top:4px}
+.f .hint{font-size:12px;color:var(--ink-3);margin-top:4px;min-height:1px}
+.f input.bad{border-color:var(--warn-line);background:var(--warn-bg)}
+.f input.bad:focus{border-color:var(--warn-line);box-shadow:0 0 0 3px rgba(209,59,59,.16)}
+.f .hint.bad{color:var(--warn-ink);font-weight:650}
+.f input[data-mdy]{font-variant-numeric:tabular-nums;letter-spacing:.04em}
 
 .choice{margin:0}
 .choice > .clab{display:block;font-size:12.5px;font-weight:700;color:var(--ink-2);margin:0 0 8px}
@@ -345,7 +349,16 @@ let S = load();
 function load(){
   try{
     const raw = localStorage.getItem("mohr.script.v1");
-    if(raw) return Object.assign(structuredClone(BLANK), JSON.parse(raw));
+    if(raw){
+      const st = Object.assign(structuredClone(BLANK), JSON.parse(raw));
+      /* calls saved before dates were typed still hold the picker's ISO value */
+      ["dob","effectiveDate"].forEach(k=>{
+        const v = st.a && st.a[k];
+        if(typeof v==="string" && /^\d{4}-\d{2}-\d{2}$/.test(v))
+          st.a[k] = v.slice(5,7)+"/"+v.slice(8,10)+"/"+v.slice(0,4);
+      });
+      return st;
+    }
   }catch(e){}
   return structuredClone(BLANK);
 }
@@ -386,9 +399,94 @@ const isOnMedicare    = () => avatar()==="medicare";
 const isT65           = () => avatar()==="" || avatar()==="t65noss" || avatar()==="t65ss";
 const reachesPricing  = () => !isEmployerTrack();
 
+/* ---- typed dates -------------------------------------------------------
+   The agent types digits and the slashes appear on their own: 03141961
+   becomes 03/14/1961. Dates are stored as MM/DD/YYYY and parsed field by
+   field — never through new Date("1961-03-14"), which resolves to UTC
+   midnight and reads back as the previous day in every US time zone.     */
+const DATE_RULES = {
+  dob:           {label:"Date of birth",  minYear:1900, maxYear:()=>new Date().getFullYear(), allowFuture:false},
+  effectiveDate: {label:"Effective date", minYear:()=>new Date().getFullYear()-1, maxYear:()=>new Date().getFullYear()+10, allowFuture:true}
+};
+const ruleFor = k => DATE_RULES[k] || DATE_RULES.dob;
+const ruleVal = v => typeof v==="function" ? v() : v;
+
+function digitsOf(v){ return String(v||"").replace(/\D/g,"").slice(0,8); }
+
+/* Turn whatever is in the box into the eight digits it means. A separator —
+   typed or pasted — closes the group before it, so "3/14/1961" is March 14
+   rather than the 31st of month 41. */
+function normalizeTyped(raw){
+  raw = String(raw||"").trim().replace(/[.\-\s]/g,"/");
+  if(!raw.includes("/")) return digitsOf(raw);
+  const segs = raw.split("/").map(x=>x.replace(/\D/g,""));
+  if(segs.length===3 && segs[0].length===4)                    // pasted 1961-03-14
+    return (segs[1].padStart(2,"0")+segs[2].padStart(2,"0")+segs[0]).slice(0,8);
+  let out = "";
+  segs.forEach((seg,i)=>{
+    /* pad a short group, but never truncate a long one — an overflowing edit
+       should push into the year and show up red, not vanish silently */
+    out += (i<2 && i<segs.length-1) ? seg.padStart(2,"0") : seg;
+  });
+  return out.slice(0,8);
+}
+
+/* Insert the separators. `trailing` adds the slash the moment a group is
+   complete; it is switched off while deleting so backspace never re-adds
+   the slash it just removed. */
+function formatMDY(d, trailing){
+  let out = d.slice(0,2);
+  if(d.length>2 || (trailing && d.length===2)) out += "/";
+  if(d.length>2) out += d.slice(2,4);
+  if(d.length>4 || (trailing && d.length===4)) out += "/";
+  if(d.length>4) out += d.slice(4,8);
+  return out;
+}
+/* Accepts MM/DD/YYYY and the ISO form left behind by the old date picker. */
+function parseMDY(v){
+  const raw = String(v||"").trim();
+  if(!raw) return null;
+  let mo,da,yr;
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(iso){ yr=+iso[1]; mo=+iso[2]; da=+iso[3]; }
+  else {
+    const d = digitsOf(raw);
+    if(d.length!==8) return null;             // four-digit year required
+    mo=+d.slice(0,2); da=+d.slice(2,4); yr=+d.slice(4,8);
+  }
+  if(mo<1||mo>12||da<1||da>31) return null;
+  const dt = new Date(yr, mo-1, da);
+  if(dt.getFullYear()!==yr || dt.getMonth()!==mo-1 || dt.getDate()!==da) return null; // e.g. 02/30
+  return dt;
+}
+function displayMDY(v){
+  const d = parseMDY(v);
+  if(!d) return String(v||"");
+  const p = n => String(n).padStart(2,"0");
+  return p(d.getMonth()+1)+"/"+p(d.getDate())+"/"+d.getFullYear();
+}
+/* What the agent should be told about what they have typed so far. */
+function dateStatus(k){
+  const raw = String(A(k)||"");
+  if(!raw.trim()) return {state:"empty", msg:""};
+  const r = ruleFor(k);
+  const d = parseMDY(raw);
+  if(!d){
+    const n = digitsOf(raw).length;
+    if(n<8) return {state:"incomplete", msg:"Keep going — mm/dd/yyyy, four-digit year."};
+    return {state:"invalid", msg:"That isn't a real date."};
+  }
+  const today = new Date(); today.setHours(0,0,0,0);
+  if(!r.allowFuture && d>today) return {state:"invalid", msg:r.label+" can't be in the future."};
+  const min = ruleVal(r.minYear), max = ruleVal(r.maxYear);
+  if(d.getFullYear()<min || d.getFullYear()>max)
+    return {state:"invalid", msg:"Year should be between "+min+" and "+max+"."};
+  return {state:"ok", msg:""};
+}
+const dobDate = () => dateStatus("dob").state==="ok" ? parseMDY(A("dob")) : null;
+
 function age(){
-  const d = A("dob"); if(!d) return null;
-  const b = new Date(d); if(isNaN(b)) return null;
+  const b = dobDate(); if(!b) return null;
   const n = new Date();
   let y = n.getFullYear()-b.getFullYear();
   const m = n.getMonth()-b.getMonth();
@@ -396,15 +494,12 @@ function age(){
   return y;
 }
 function monthsTo65(){
-  const d = A("dob"); if(!d) return null;
-  const b = new Date(d); if(isNaN(b)) return null;
-  const t = new Date(b.getFullYear()+65, b.getMonth(), 1);
+  const b = dobDate(); if(!b) return null;
   const n = new Date();
-  return (t.getFullYear()-n.getFullYear())*12 + (t.getMonth()-n.getMonth());
+  return ((b.getFullYear()+65)-n.getFullYear())*12 + (b.getMonth()-n.getMonth());
 }
 function birthMonthName(){
-  const d=A("dob"); if(!d) return "";
-  const b=new Date(d); if(isNaN(b)) return "";
+  const b = dobDate(); if(!b) return "";
   return ["January","February","March","April","May","June","July",
           "August","September","October","November","December"][b.getMonth()];
 }
@@ -646,8 +741,9 @@ const STEPS = [
   skip:()=> isOnMedicare(),
   blocks:[
     {t:"say", text:"Now what is your date of birth?"},
-    {t:"field", k:"dob", label:"Date of birth", type:"date", w:"md"},
-    {t:"do", if:()=>age()!==null, text:()=>{
+    {t:"field", k:"dob", label:"Date of birth", type:"mdy", w:"md"},
+    {t:"do", text:()=>{
+      if(age()===null) return "Type the digits — <b>03141961</b> — and the slashes fill themselves in. The age and the enrollment window appear here once the date is complete.";
       const a=age(), m=monthsTo65();
       let s = "Age <b>"+a+"</b>. Birth month is <b>"+birthMonthName()+"</b>. ";
       if(m>0)       s += "Turns 65 in about <b>"+m+" month"+(m===1?"":"s")+"</b> — manual enrollment window opens 3 months before the birth month.";
@@ -1026,8 +1122,10 @@ const STEPS = [
   skip:()=> !isOnMedicare(),
   blocks:[
     {t:"say", text:"Now what is your date of birth?"},
-    {t:"field", k:"dob", label:"Date of birth", type:"date", w:"md"},
-    {t:"do", if:()=>age()!==null, text:()=>"Age <b>"+age()+"</b>."},
+    {t:"field", k:"dob", label:"Date of birth", type:"mdy", w:"md"},
+    {t:"do", text:()=>age()===null
+      ? "Type the digits — <b>03141961</b> — and the slashes fill themselves in."
+      : "Age <b>"+age()+"</b>."},
     {t:"cablock"},
     {t:"say", text:"Perfect, got that here."}
   ]},
@@ -1364,6 +1462,14 @@ function fieldHTML(f){
     const opts = f.opts || SELECTS[f.k] || [];
     inner = '<select data-k="'+f.k+'">'+opts.map(o=>
       '<option value="'+esc(o.v)+'"'+(A(f.k)===o.v?" selected":"")+">"+esc(o.l)+"</option>").join("")+"</select>";
+  } else if(type==="mdy"){
+    const st = dateStatus(f.k);
+    inner = '<input data-k="'+f.k+'" data-mdy type="text" inputmode="numeric" autocomplete="off" '+
+      'class="'+(st.state==="ok"||st.state==="empty"?"":"bad")+'" '+   /* not focused yet */
+      'value="'+esc(displayMDY(A(f.k)))+'" placeholder="mm/dd/yyyy">';
+    return '<div class="f '+w+'"><label>'+esc(f.label)+"</label>"+inner+
+           '<div class="hint'+(st.msg?" bad":"")+'" data-msgfor="'+f.k+'">'+
+             esc(st.msg || f.hint || "")+"</div></div>";
   } else {
     inner = '<input data-k="'+f.k+'" type="'+type+'" value="'+v+'" placeholder="'+esc(f.ph||"")+'">';
   }
@@ -1500,7 +1606,7 @@ function threeStepsHTML(){
   }
   if(blocked) steps = steps.slice(1);   // no ancillary means no step 1
   const effField = (av!=="t65noss" && av!=="t65ss")
-    ? '<div class="frow" style="margin-top:12px">'+fieldHTML({k:"effectiveDate",label:"Effective date",type:"date",w:"md"})+"</div>"
+    ? '<div class="frow" style="margin-top:12px">'+fieldHTML({k:"effectiveDate",label:"Effective date",type:"mdy",w:"md"})+"</div>"
     : "";
   return '<div class="b umb"><div class="umb-h">'+title+(blocked?" · umbrella removed":"")+'</div><div class="umb-b goals">'+
     (blocked?'<div class="b warn" style="margin:0 0 10px"><span class="ic">⚠</span><span>Step 1 was the umbrella — it cannot be pitched here, so this is a '+steps.length+'-step close.</span></div>':"")+
@@ -1746,14 +1852,68 @@ function refill(){
 /* ============================================================
    EVENTS
    ============================================================ */
+/* Rewrite the field to mm/dd/yyyy and put the caret back where the agent
+   left it — counted in digits, so the inserted slashes don't shift it. */
+/* `how` distinguishes the three ways text arrives, because only two of them
+   mean a separator: a paste, and the agent typing "/" themselves. A plain
+   digit edit is read as digits alone — so surgery in the middle of a finished
+   date produces an obviously broken value the agent can see, never a
+   plausible wrong one that reads as real. */
+function maskDate(el, how){
+  const caret = el.selectionStart;
+  const atEnd = caret === el.value.length;
+  const digitsBefore = (el.value.slice(0,caret).match(/\d/g)||[]).length;
+  const digits = (how.pasted || how.typedSep) ? normalizeTyped(el.value) : digitsOf(el.value);
+  const out = formatMDY(digits, !how.deleting);
+  if(out === el.value) return out;
+  el.value = out;
+  if(atEnd){ el.setSelectionRange(out.length,out.length); return out; }
+  let pos = 0, seen = 0;
+  while(pos<out.length && seen<digitsBefore){ if(/\d/.test(out[pos])) seen++; pos++; }
+  if(out[pos]==="/" && seen===digitsBefore && digitsBefore>0 && digitsBefore<8) pos++;
+  el.setSelectionRange(pos,pos);
+  return out;
+}
+function paintDate(el){
+  const st = dateStatus(el.dataset.k);
+  const bad = st.state==="invalid" ||
+              (st.state==="incomplete" && document.activeElement!==el);
+  el.classList.toggle("bad", bad);
+  const msg = document.querySelector('[data-msgfor="'+el.dataset.k+'"]');
+  if(msg){ msg.textContent = st.msg; msg.classList.toggle("bad", !!st.msg); }
+}
+
 $("#blocks").addEventListener("input", e=>{
   const el = e.target;
-  if(el.dataset.k){ set(el.dataset.k, el.value); refill(); renderRail(); }
-  if(el.id==="goalIn"){ /* no-op */ }
+  if(!el.dataset.k) return;
+  if(el.dataset.mdy!==undefined){
+    const before = A(el.dataset.k), it = e.inputType||"";
+    maskDate(el, {
+      deleting : it.startsWith("delete"),
+      pasted   : it==="insertFromPaste" || it==="insertFromDrop" || it==="",
+      typedSep : it==="insertText" && /^[\/\-. ]$/.test(e.data||"")
+    });
+    set(el.dataset.k, el.value);
+    paintDate(el);
+    /* A finished date can switch the California rule on or off, so redraw the
+       whole step — then hand focus straight back to the agent. */
+    if(dateStatus(el.dataset.k).state==="ok" && el.value!==before){
+      const k = el.dataset.k;
+      render();
+      const again = document.querySelector('[data-k="'+k+'"]');
+      if(again){ again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+      return;
+    }
+    refill(); renderRail(); return;
+  }
+  set(el.dataset.k, el.value); refill(); renderRail();
 });
 $("#blocks").addEventListener("change", e=>{
   const el = e.target;
-  if(el.dataset.k){ set(el.dataset.k, el.value); render(); }
+  if(!el.dataset.k) return;
+  if(el.dataset.mdy!==undefined && dateStatus(el.dataset.k).state==="ok")
+    el.value = displayMDY(el.value);
+  set(el.dataset.k, el.value); render();
 });
 $("#blocks").addEventListener("click", e=>{
   const opt = e.target.closest("[data-choice]");
@@ -1771,6 +1931,9 @@ $("#blocks").addEventListener("click", e=>{
   if(e.target.id==="printSum"){ window.print(); return; }
   if(e.target.id==="dlSum"){ download(); return; }
 });
+$("#blocks").addEventListener("focusout", e=>{
+  if(e.target.dataset && e.target.dataset.mdy!==undefined) paintDate(e.target);
+}, true);
 $("#blocks").addEventListener("keydown", e=>{
   if(e.target.id==="goalIn" && e.key==="Enter"){ e.preventDefault(); addGoal(); }
 });

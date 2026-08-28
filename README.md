@@ -81,6 +81,17 @@ Both totals stay on screen from the moment the concerns are captured, so the num
 already computed when the agent reaches the pricing section. The agent can override
 either umbrella on the pricing screen; "Reset to calculated" puts it back.
 
+## Dates
+
+Dates are typed, not picked. The agent types `03141961` and the slashes appear on
+their own — no date-picker segments, no fighting the year. Pasting `3/14/1961`,
+`03141961` or `1961-03-14` all work, and typing the slashes by hand is fine too.
+
+A four-digit year is required: `031461` stays unfinished rather than guessing at a
+century, because the California rule keys off the age. An unfinished or impossible
+date leaves the age blank, shows a message under the field, and turns the field red
+once the agent moves on.
+
 ## Other things it does
 
 - Captures the opening goals loop and reads every goal back in the formal recommendation
