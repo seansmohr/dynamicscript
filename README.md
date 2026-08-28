@@ -19,14 +19,21 @@ saved to that browser, so a refresh or an accidental tab close doesn't lose the 
 
 ## Standing compliance rule
 
-**A client who is 65 or older in California cannot be pitched ancillary** — no umbrella,
-no Gold / Silver / Bronze. Medicare only. The zip code and date of birth decide it, and
-both are captured early on every track. When it fires, the tool removes the umbrella from
-the pricing, drops step 1 from the closes, and hides the Gold / Silver / Bronze pitch.
-There is no bypass; correcting a wrong zip or date of birth is the only way it clears.
+**A client who is 65 or older in California cannot be sold cancer / heart attack / stroke
+cover or skilled nursing cover.** Since neither can be sold, the tool does not embed either
+exposure: the major-exposures set-up, the CHS conversation and the skilled nursing
+conversation are skipped entirely on both tracks that carry them.
 
-On the employer track there is no Medicare plan to offer in its place, so that call ends
-after the delay recommendation and the CMS L564 education.
+**Dental can still be sold.** The dental question is still asked as normal and still prices
+$50 into the Medicare Supplement umbrella. That leaves the Advantage umbrella at $0, since
+an Advantage plan already bundles dental.
+
+Gold / Silver / Bronze *is* cancer, heart attack and stroke cover, so it cannot be sold
+either. On the employer track there is no Medicare plan to offer in its place, so that call
+ends after the delay recommendation and the CMS L564 education.
+
+The zip code and date of birth decide all of this. Overrides are switched off while the
+restriction applies; correcting a wrong zip or date of birth is the only way it clears.
 
 ## The four tracks
 
@@ -68,9 +75,10 @@ Three answers in the needs assessment price the umbrella. Nothing else touches i
 | Skilled nursing is a concern | +$50 | +$100 |
 | Dental is important to them | +$50 | included with the plan |
 | **Maximum** | **$150** | **$150** |
+| **California, 65+** — cancer and skilled nursing removed | **$0 or $50** | **$0** |
 
 Dental only prices into the Supplement side, because an Advantage plan already bundles it.
-The California rule zeroes both umbrellas outright, and the override does not apply to it.
+Under the California restriction only the dental component survives, and the override is switched off.
 
 The quoted price is then:
 

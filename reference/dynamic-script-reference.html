@@ -44,8 +44,10 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
 
 <h2>Standing compliance rule</h2>
 <div class="branch warn"><span class="tag">Before anything else</span>
-<p><b>A client who is 65 or older in California cannot be pitched ancillary.</b> No umbrella, no Gold / Silver / Bronze. Pitch Medicare only. Their zip code and date of birth decide this, and both are captured early on every track.</p>
-<p>On the employer track there is no Medicare plan to offer in its place, so that call ends after the delay recommendation and CMS L564 education.</p></div>
+<p><b>A client who is 65 or older in California cannot be sold cancer / heart attack / stroke cover or skilled nursing cover.</b> Because neither can be sold, <b>do not embed either exposure</b> — skip the major-exposures set-up, the CHS conversation and the skilled nursing conversation entirely.</p>
+<p><b>Dental can still be sold.</b> Ask whether it is important to them as normal; it still prices $50 into the Medicare Supplement umbrella. That leaves the Advantage umbrella at $0, since an Advantage plan already bundles dental.</p>
+<p>Gold / Silver / Bronze <i>is</i> cancer, heart attack and stroke cover, so it cannot be sold either. On the employer track there is no Medicare plan to offer in its place, so that call ends after the delay recommendation and the CMS L564 education.</p>
+<p>Their zip code and date of birth decide all of this, and both are captured early on every track.</p></div>
 
 <h2>How this script branches</h2>
 <div class="map">EVERY CALL
@@ -60,7 +62,7 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
   │     └─ "Over 20 employees?" ── YES ──┐              │
   │        (20 or fewer → they must transition, continue the CNA)
   │        …SS · carrier · premium · deductible/MOOP · health · Rx
-  │        …DENTAL* · CHS* · SKILLED NURSING* · Part B income · assets
+  │        …DENTAL* · CHS*† · SKILLED NURSING*† · Part B income · assets
   │                                       │              │
   │                                       ▼              ▼
   │                        3. EDUCATION (EMPLOYER)   4. EDUCATION (ALREADY ON MEDICARE)
@@ -84,7 +86,7 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
         → Scenario A (not on SS) / Scenario B (on SS)
         → underwriting urgency → address → objections + pre-emptive close
 
-* umbrella drivers</div>
+* umbrella drivers    † skipped entirely when the client is 65+ in California</div>
 
 <table>
 <tr><th>Track</th><th>How you land on it</th><th>Its own questions</th><th>Close</th></tr>
@@ -106,6 +108,7 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
 <tr><td>Skilled nursing is a concern</td><td class="n">+$50</td><td class="n">+$100</td></tr>
 <tr><td>Dental is important to them</td><td class="n">+$50</td><td class="n">included with the plan</td></tr>
 <tr><td><b>Maximum umbrella</b></td><td class="n"><b>$150</b></td><td class="n"><b>$150</b></td></tr>
+<tr><td><b>California, 65 or older</b> — cancer and skilled nursing removed, dental only</td><td class="n"><b>$0 or $50</b></td><td class="n"><b>$0</b></td></tr>
 </table>
 <table>
 <tr><th>Quote</th><th>Formula</th></tr>
@@ -113,7 +116,7 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
 <tr><td><b>Medicare Advantage</b></td><td>MAPD premium (usually $0) &nbsp;+&nbsp; umbrella ($50 / $100 / $150) = <b>one monthly price</b></td></tr>
 </table>
 <div class="do">Quote the single all-in number. Do not itemize it out loud unless they ask.</div>
-<div class="stop">65 or older in California: the umbrella comes off entirely. Quote the plan on its own and the close drops to two steps.</div>
+<div class="stop">65 or older in California: only the dental component survives. The Supplement umbrella is $50 if dental matters to them and $0 if it does not; the Advantage umbrella is $0 either way. When the umbrella lands at $0 there is nothing to sell today, and the close drops to two steps.</div>
 
 <div class="page"></div>
 <h2>1 · Opening</h2>
@@ -199,21 +202,21 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
 <div class="say">"Okay, and are you taking any prescriptions right now, and what are they actively treating?"</div>
 <div class="write">&nbsp;</div>
 
-<h3>Dental importance <span class="pill">umbrella driver</span></h3>
+<h3>Dental importance <span class="pill">umbrella driver</span> <span class="pill">still asked in CA at 65+</span></h3>
 <div class="say">"My next question would be, is dental insurance important to you, and do you currently have that with your employer or through the marketplace?"</div>
 <div class="branch"><span class="tag">If yes</span><p><b>+$50 to the Medicare Supplement umbrella.</b> No effect on the Advantage umbrella — an Advantage plan already bundles dental.</p></div>
 
-<h3>Major exposures — the set-up</h3>
+<h3>Major exposures — the set-up <span class="pill">skipped in CA at 65+</span></h3>
 <div class="say">"Now, in that webinar do you remember how we highlight major exposures?"</div>
 <div class="say">"Major exposures can really stem from any plan — whether it's your current plan with [carrier], or a Medicare Supplement or Advantage plan — but really in relation to two specific things."</div>
 
-<h3>Cancer, heart attack, stroke <span class="pill">umbrella driver</span></h3>
+<h3>Cancer, heart attack, stroke <span class="pill">umbrella driver</span> <span class="pill">skipped in CA at 65+</span></h3>
 <div class="say">"For starters — cancer, heart attack, stroke. Do we have any personal or family history with the big three?"</div>
 <div class="write">&nbsp;</div>
 <div class="say">"I really appreciate you sharing that with me… and the reason we bring this up — I'll share a personal note. My grandmother had cancer three times, and she was on Medicare and had great coverage, but even with that coverage she had to pay <b>$15,000</b> out of her own pocket for non-approved expenses. <b>Is something like that going to be a concern for you?</b>"</div>
 <div class="branch"><span class="tag">If yes</span><p><b>+$50 to both umbrellas.</b></p></div>
 
-<h3>Skilled nursing <span class="pill">umbrella driver</span></h3>
+<h3>Skilled nursing <span class="pill">umbrella driver</span> <span class="pill">skipped in CA at 65+</span></h3>
 <div class="say">"Now the next big exposure we see is skilled nursing. Do you have any personal or family history with that, and are you familiar with how that coverage functions with Medicare?"</div>
 <div class="say">"Medicare will help cover up to day 100 as long as you had a <b>3 day hospital stay</b> and are <b>showing signs of improvement</b>… but after day 100 you are responsible for all costs. And it's really important we focus on that 3 day hospital stay and showing signs of improvement."</div>
 <div class="say">"I had a client who was in skilled nursing for ten days and her insurance plan, Kaiser, said she was not improving and doing the exercises because she had a stroke — so they ended her care and she had to go home and pay <b>$20,000</b> out of pocket for home care. So I'm assuming this will be a concern as well?"</div>
@@ -273,7 +276,7 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
 <div class="say">"Now when you do decide to retire, or you lose that creditable coverage, that's when you take action. That's when you take <b>CMS L564</b> — it's a form you'll take to your HR department and they'll help you fill it out. Then you'll take that form and you're gonna submit it along with your application for <b>[not on SS: Part A and Part B / on SS: Part B]</b>. That form is basically your <b>hall pass that voids all penalties.</b> Are we clear on that?"</div>
 
 <div class="branch warn"><span class="tag">California, 65 or older — stop here</span>
-<p>Gold / Silver / Bronze is ancillary and cannot be pitched, and there is no Medicare plan to offer in its place because they are staying on employer coverage. <b>End the call as education.</b> Answer their questions, make sure they know to call when they lose creditable coverage, and note when to follow up.</p></div>
+<p>Gold / Silver / Bronze is cancer, heart attack and stroke cover, so it cannot be sold, and there is no Medicare plan to offer in its place because they are staying on employer coverage. <b>End the call as education.</b> Answer their questions, make sure they know to call when they lose creditable coverage, and note when to follow up.</p></div>
 
 <h3>Recommendation #2 — cover the gaps</h3>
 <div class="say">"Now my second recommendation would be to protect you from the gaps that employer plans typically leave behind."</div>
@@ -317,22 +320,22 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
 <div class="say">"Have you hit that max out of pocket, and if so what happened?"</div>
 <div class="write">Premium: $ &nbsp;&nbsp; Max OOP: $</div>
 
-<h3>Dental <span class="pill">umbrella driver</span></h3>
+<h3>Dental <span class="pill">umbrella driver</span> <span class="pill">still asked in CA at 65+</span></h3>
 <div class="say">"And are you carrying any dental insurance right now?"</div>
 <div class="say">"Is that coverage important to you?"</div>
 <div class="branch"><span class="tag">If important</span><p><b>+$50 to the Medicare Supplement umbrella.</b> No effect on the Advantage umbrella — an Advantage plan already bundles dental.</p></div>
 
-<h3>Major exposures — the set-up</h3>
+<h3>Major exposures — the set-up <span class="pill">skipped in CA at 65+</span></h3>
 <div class="say">"Gotcha. Now, in that webinar do you remember how we highlight major exposures?"</div>
 <div class="say">"Major exposures can really stem from any plan — whether it's your current plan with [carrier], or any other Medicare plan — but really in relation to two specific things."</div>
 
-<h3>Cancer, heart attack, stroke <span class="pill">umbrella driver</span></h3>
+<h3>Cancer, heart attack, stroke <span class="pill">umbrella driver</span> <span class="pill">skipped in CA at 65+</span></h3>
 <div class="say">"For starters — cancer, heart attack, stroke. Do we have any personal or family history with the big three?"</div>
 <div class="say">"I really appreciate you sharing that with me… and the reason we bring this up — I'll share a personal note. My grandmother had cancer three times, and she was on Medicare and had great coverage, but even with that coverage she had to pay <b>$15,000</b> out of her own pocket for non-approved expenses. <b>Is something like that going to be a concern for you?</b>"</div>
 <div class="do"><b>Get their commitment.</b> Not a shrug — a yes.</div>
 <div class="branch"><span class="tag">If yes</span><p><b>+$50 to both umbrellas.</b></p></div>
 
-<h3>Skilled nursing <span class="pill">umbrella driver</span></h3>
+<h3>Skilled nursing <span class="pill">umbrella driver</span> <span class="pill">skipped in CA at 65+</span></h3>
 <div class="say">"Now the next big exposure we see is skilled nursing. Do you have any personal or family history with that, and are you familiar with how that coverage functions with Medicare?"</div>
 <div class="say">"Medicare will help cover up to day 100 as long as you had a <b>3 day hospital stay</b> and are <b>showing signs of improvement</b>… but after day 100 you are responsible for all costs. And it's really important we focus on that 3 day hospital stay and showing signs of improvement."</div>
 <div class="say">"I had a client who was in skilled nursing for ten days and her insurance plan, Kaiser, said she was not improving and doing the exercises because she had a stroke — so they ended her care and she had to go home and pay <b>$20,000</b> out of pocket for home care. So I'm assuming this will be a concern as well?"</div>
@@ -350,7 +353,7 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
 <ol><li>We get your umbrella coverage set up for <b>$[X]</b> a month.</li>
 <li>We review your current plan and lock in your new <b>[Supplement / Advantage]</b> plan.</li>
 <li>Your new coverage kicks in on <b>[effective date]</b>.</li></ol>
-<p class="fine" style="font:italic 9.5pt Helvetica,Arial,sans-serif;color:#7d879f;margin:6px 0 0">California and 65 or older: step 1 is removed and this becomes a two-step close.</p></div>
+<p class="fine" style="font:italic 9.5pt Helvetica,Arial,sans-serif;color:#7d879f;margin:6px 0 0">California and 65 or older: step 1 is the dental umbrella if dental matters to them, and is removed altogether if it does not.</p></div>
 <div class="do">Then the underwriting urgency and the address question — same wording as the T65 track on the last page.</div>
 
 <div class="page"></div>
@@ -422,7 +425,7 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
 <tr><td><b>Total monthly — one price</b></td><td class="n"><b>&nbsp;</b></td></tr>
 </table>
 <div class="say">"You'll just have some small copays for doctor and specialist visits."</div>
-<div class="stop">California and 65 or older: drop the umbrella line from both tables and quote the plan on its own.</div>
+<div class="stop">California and 65 or older: the Supplement umbrella line is dental only ($50, or nothing if dental does not matter to them). Drop the umbrella line from the Advantage table entirely.</div>
 
 <h3>Which option are they leaning toward?</h3>
 <div class="say">"Now that we've gone through both options and the detailed pricing breakdown, which route do you feel yourself leaning toward as of now?"</div>
@@ -445,7 +448,7 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
 <li>Since you're on Social Security you'll be automatically enrolled into Parts A &amp; B — we just confirm that's all set.</li>
 <li>We enroll you into your <b>[Supplement — 6 months / Advantage — 3 months]</b> before your 65th birthday.</li></ol></div>
 <div class="do">Clients already on Medicare use the <b>3 step close in section 4</b> instead.</div>
-<div class="stop">California and 65 or older: step 1 is removed and this becomes a two-step close.</div>
+<div class="stop">California and 65 or older with no dental sale: step 1 is removed and this becomes a two-step close. If dental matters to them, step 1 is the $50 dental umbrella on the Supplement side.</div>
 <div class="say">"<b>Step 1 is the only thing we need to knock out today.</b>"</div>
 
 <h3>Why we do this today</h3>
