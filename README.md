@@ -9,13 +9,55 @@ the needs assessment.
 
 | File | What it is |
 |---|---|
-| `index.html` | The interactive script. One self-contained file — open it in any browser, no install, works offline. |
-| `reference/dynamic-script-reference.html` | Printable branched version of the whole script. |
-| `reference/Mohr_Dynamic_Script_Reference.pdf` | The same thing as a PDF, for printing or keeping open as a backup. |
+| `public/index.html` | The interactive script. One self-contained file — open it in any browser, no install, works offline. |
+| `public/reference/dynamic-script-reference.html` | Printable branched version of the whole script. |
+| `public/reference/Mohr_Dynamic_Script_Reference.pdf` | The same thing as a PDF, for printing or keeping open as a backup. |
+| `server.js` | Dependency-free static server used for hosting. |
 
-To use it: download `index.html` and double-click it. Everything typed during a call is
-saved to that browser, so a refresh or an accidental tab close doesn't lose the call.
-"New call" clears it.
+To use it without hosting anything: download `public/index.html` and double-click it.
+Everything typed during a call is saved to that browser, so a refresh or an accidental tab
+close doesn't lose the call. "New call" clears it.
+
+## Deploying
+
+The app is one static HTML file, so `server.js` just hands out `public/` and nothing else.
+There are **no dependencies** — no install step, no build step, nothing to keep patched.
+
+Run it locally:
+
+```bash
+npm start            # http://localhost:3000
+PORT=8080 npm start  # or pick a port
+```
+
+### Railway
+
+1. New Project → Deploy from GitHub repo → pick this repo and the branch.
+2. That's it. `railway.json` pins the start command and the health check, and Nixpacks
+   picks up Node from `package.json` and `.node-version`.
+3. Settings → Networking → **Generate Domain** to get the public URL.
+
+The server binds `0.0.0.0` on Railway's injected `PORT`, answers `/healthz` for the health
+check, and shuts down cleanly on `SIGTERM` so redeploys don't cut off a call in progress.
+
+### Putting a password on it
+
+Anyone with the URL can open the script. No client data ever reaches the server — it all
+stays in the agent's browser — but the script itself is yours. To require a login, set a
+Railway variable:
+
+```
+APP_PASSWORD = <something long>
+APP_USERNAME = mohr          # optional, defaults to "mohr"
+```
+
+Leave `APP_PASSWORD` unset and the site stays open. The health check is never gated, so
+Railway can still reach it either way.
+
+### Updating the script
+
+Push to the branch and Railway redeploys. `index.html` is served `no-cache`, so agents get
+the new version on their next reload — no cache-busting to think about.
 
 ## Standing compliance rule
 
@@ -99,6 +141,14 @@ A four-digit year is required: `031461` stays unfinished rather than guessing at
 century, because the California rule keys off the age. An unfinished or impossible
 date leaves the age blank, shows a message under the field, and turns the field red
 once the agent moves on.
+
+## Working on it
+
+The browser tests use Playwright, which is not a dependency of the app:
+
+```bash
+npm i -D playwright && npx playwright install chromium
+```
 
 ## Other things it does
 
