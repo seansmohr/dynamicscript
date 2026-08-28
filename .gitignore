@@ -1,3 +1,6 @@
 node_modules/
 package-lock.json
 .DS_Store
+.t*.js
+.shot*.js
+.final.js
