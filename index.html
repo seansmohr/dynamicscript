@@ -136,9 +136,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 .bul li{margin:5px 0;font-size:16.5px;font-family:var(--read)}
 .ph{
   background:var(--do-bg);color:var(--do-ink);border-bottom:2px dotted var(--do-line);
-  padding:0 4px;border-radius:3px;font-style:italic;font-size:.94em
+  padding:0 3px;margin:0 -1px;border-radius:3px;font-style:italic;font-size:.94em
 }
-.fill{font-weight:750;color:var(--brand);background:var(--brand-soft);padding:0 5px;border-radius:4px}
+.fill{font-weight:750;color:var(--brand);background:var(--brand-soft);padding:0 3px;margin:0 -1px;border-radius:4px}
 
 /* inputs */
 .frow{display:flex;gap:12px;flex-wrap:wrap}
@@ -241,6 +241,16 @@ button,input,select,textarea{font:inherit;color:inherit}
 .card textarea:focus{border-color:var(--brand)}
 .flagrow{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--warn-ink);
   background:var(--warn-bg);border-left:3px solid var(--warn-line);border-radius:0 8px 8px 0;padding:8px 11px;margin-bottom:8px}
+
+/* compliance stop */
+.stopcard{border:2px solid var(--warn-line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.stopcard-h{padding:11px 16px;background:var(--warn-bg);border-bottom:1px solid var(--warn-line);
+  font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--warn-ink)}
+.stopcard-b{padding:14px 16px;font-size:15px;color:var(--ink)}
+.stopcard-b p{margin:0 0 8px}.stopcard-b p:last-child{margin-bottom:0}
+.stopcard-b .fine{font-size:13px;color:var(--ink-3)}
+.railstop{border:1.5px solid var(--warn-line);background:var(--warn-bg);color:var(--warn-ink);
+  border-radius:9px;padding:10px 12px;font-size:13px;font-weight:600}
 
 /* summary */
 .sum h2{font-size:17px;margin:22px 0 8px;letter-spacing:-.01em;padding-bottom:5px;border-bottom:2px solid var(--line)}
@@ -346,35 +356,35 @@ const A = k => (S.a[k] ?? "");
 function set(k,v){ S.a[k]=v; save(); }
 
 /* ============================================================
-   DERIVED — avatar, age, flags
+   DERIVED — avatar, age, state, compliance
    ============================================================ */
 
-// Employer coverage counts only when they're on a group plan through work.
-function hasEmployerCoverage(){
-  return A("coverageSource")==="employer";
-}
-// >20 employees keeps them on the employer/delay track. 20 or fewer means
-// Medicare is normally the primary payer, so they get routed to the T65 track.
+/* The v5 script exits to the employer track at the work-status question,
+   before coverage source is ever asked — so the employer route is decided
+   by "still working" plus "over 20 employees", nothing else. */
+function hasEmployerJob(){ return ["working","partTime"].includes(A("workStatus")); }
 function employerIsLarge(){ return A("employerSize")==="over20"; }
 
 function avatar(){
   if(A("avatarOverride")) return A("avatarOverride");
   if(A("onMedicare")==="yes") return "medicare";
-  if(hasEmployerCoverage() && employerIsLarge()) return "employer";
+  if(hasEmployerJob() && employerIsLarge()) return "employer";
   if(A("ssStatus")==="yes") return "t65ss";
-  if(A("ssStatus")==="no") return "t65noss";
-  return "";               // not yet determined
+  if(A("ssStatus")==="no")  return "t65noss";
+  return "";
 }
 const AVATARS = {
   employer:{label:"Employer coverage", short:"Employer", track:"Delay Medicare + Gold / Silver / Bronze"},
   t65noss :{label:"T65 — not on Social Security", short:"T65 · not on SS", track:"Manual enrollment → Supp vs MA"},
   t65ss   :{label:"T65 — on Social Security", short:"T65 · on SS", track:"Auto enrollment → Supp vs MA"},
-  medicare:{label:"Currently on Medicare", short:"On Medicare", track:"Plan review → Supp vs MA"}
+  medicare:{label:"Currently on Medicare", short:"On Medicare", track:"Own needs assessment → Supp vs MA"}
 };
 const isEmployerTrack = () => avatar()==="employer";
-/* Before the avatar is known, project the Medicare track — it is the default path,
-   so the step count and section rail are meaningful from the very first step. */
-const isMedTrack      = () => avatar()==="" || ["t65noss","t65ss","medicare"].includes(avatar());
+const isOnMedicare    = () => avatar()==="medicare";
+/* Undetermined projects onto the T65 track — the default path — so the step
+   count and section rail read correctly from the very first step. */
+const isT65           = () => avatar()==="" || avatar()==="t65noss" || avatar()==="t65ss";
+const reachesPricing  = () => !isEmployerTrack();
 
 function age(){
   const d = A("dob"); if(!d) return null;
@@ -399,19 +409,40 @@ function birthMonthName(){
           "August","September","October","November","December"][b.getMonth()];
 }
 
+/* ---- California ancillary rule ----------------------------------------
+   65 or older in California means no ancillary product may be pitched —
+   no umbrella, no Gold / Silver / Bronze. California zips run 90001–96162,
+   so the 900–961 prefix identifies the state on its own. Every other state
+   is left blank because no other state changes what can be sold.          */
+function stateFromZip(z){
+  const n = parseInt(String(z||"").replace(/\D/g,"").slice(0,3),10);
+  if(!isFinite(n)) return "";
+  return (n>=900 && n<=961) ? "CA" : "";
+}
+function clientState(){
+  const manual = String(A("stateManual")||"").trim().toUpperCase();
+  return manual || stateFromZip(A("zip"));
+}
+function caBlocked(){
+  const a = age();
+  return clientState()==="CA" && a!==null && a>=65;
+}
+const CA_RULE = "65 or older in California — ancillary products cannot be pitched on this call. Medicare only.";
+
 /* Live advisories the agent should see. */
 function flags(){
   const out=[];
+  if(caBlocked()) out.push("<b>California, age "+age()+".</b> "+CA_RULE);
   if(A("makesDecisions")==="no")
     out.push("They do not make their own healthcare decisions — an authorized representative or POA must be on the line before you present anything.");
   if(A("soa")==="no")
     out.push("No Scope of Appointment on record. You cannot discuss MA, Med Supp, PDP or ancillary products until you have a clear verbal yes.");
-  if(hasEmployerCoverage() && A("employerSize")==="under20")
-    out.push("Employer has 20 or fewer employees — Medicare is normally the PRIMARY payer, so delaying Part B is usually the wrong call. Routed to the T65 track instead of the employer delay track.");
-  if(A("onMedicare")==="yes" && hasEmployerCoverage())
-    out.push("On Medicare A & B and still holding employer coverage — confirm which is primary before recommending a change.");
+  if(hasEmployerJob() && A("employerSize")==="under20")
+    out.push("Employer has 20 or fewer employees — they must transition to Medicare, so the call continues through the full needs assessment on the T65 track.");
+  if(isEmployerTrack() && A("empCoverageIsEmployer")==="no")
+    out.push("Their plan is not actually through the employer — the delay recommendation assumes creditable employer coverage. Verify before recommending a delay.");
   if(A("onMedicare")==="notsure")
-    out.push("Client is unsure whether they have Parts A & B — verify on their red-white-and-blue card before enrolling anything.");
+    out.push("Client is unsure whether they have Parts A & B — verify on their red-white-and-blue card before going any further.");
   return out;
 }
 
@@ -420,6 +451,7 @@ function flags(){
    Med Supp : cancer $50 + skilled nursing $50 + dental $50  (max $150)
    Med Adv  : cancer $50 + skilled nursing $100             (max $150)
    MA already bundles dental, so dental adds nothing there.
+   The California rule zeroes both outright — no override.
    ============================================================ */
 const UMB = {
   supp:[
@@ -439,10 +471,11 @@ function umbrellaCalc(kind){
   return { rows, raw, total: Math.min(raw,150), capped: raw>150 };
 }
 function umbrella(kind){
-  const o = A(kind==="supp" ? "umbSuppOverride" : "umbMaOverride");
   const calc = umbrellaCalc(kind);
+  if(caBlocked()) return { ...calc, value:0, overridden:false, blocked:true };
+  const o = A(kind==="supp" ? "umbSuppOverride" : "umbMaOverride");
   const n = o===""||o==null ? calc.total : Number(o);
-  return { ...calc, value:(isFinite(n)?n:calc.total), overridden:!(o===""||o==null) };
+  return { ...calc, value:(isFinite(n)?n:calc.total), overridden:!(o===""||o==null), blocked:false };
 }
 const money = n => "$" + (Math.round(Number(n)||0)).toLocaleString();
 const num   = v => { const n = parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isFinite(n)?n:0; };
@@ -520,16 +553,17 @@ const YN = [{v:"yes",l:"Yes"},{v:"no",l:"No"}];
 
 const STEPS = [
 
-/* ---------------- 1. OPENING ---------------- */
+/* ================= 1. OPENING — every call ================= */
 { id:"setup", sec:"Opening", title:"Before you dial",
   sub:"Fill these in and every line of the script below fills itself in for you.",
   blocks:[
     {t:"fields", items:[
-      {k:"agentName",   label:"Your name",         ph:"Agent name", w:"md"},
-      {k:"clientFirst", label:"Client first name",  ph:"First name", w:"md"},
-      {k:"clientName",  label:"Client full name",   ph:"Full name",  w:"md"}
+      {k:"agentName",   label:"Your name",        ph:"Agent name", w:"md"},
+      {k:"clientFirst", label:"Client first name", ph:"First name", w:"md"},
+      {k:"clientName",  label:"Client full name",  ph:"Full name",  w:"md"}
     ]},
-    {t:"do", text:"Anything you type anywhere in this script is saved to this browser and pulled into the summary at the end."}
+    {t:"do", text:"Anything you type anywhere in this script is saved to this browser and pulled into the summary at the end."},
+    {t:"warn", text:"<b>Standing rule:</b> a client who is 65 or older in California cannot be pitched ancillary — no umbrella, no Gold / Silver / Bronze. Medicare only. Their zip and date of birth set this automatically once you capture them."}
   ]},
 
 { id:"greeting", sec:"Opening", title:"Greeting & webinar confirmation",
@@ -552,17 +586,17 @@ const STEPS = [
   ]},
 
 { id:"eligibility", sec:"Opening", title:"Eligibility check",
-  sub:"First branch point — this is what separates the currently-on-Medicare client from everyone else.",
+  sub:"A yes here sends the whole call down the already-on-Medicare track — its own needs assessment, starting right after the goals.",
   blocks:[
     {t:"say", text:"Before we go further, are you currently enrolled in Medicare Parts A and B?"},
-    {t:"choice", k:"onMedicare", label:"Enrolled in Parts A & B?", opts:[
-      {v:"yes",l:"Yes — already on Medicare", sub:"→ Currently on Medicare avatar"},
-      {v:"no", l:"No — not yet",              sub:"→ T65 or employer avatar"},
-      {v:"notsure", l:"Not sure",             sub:"Verify on their card"}
+    {t:"choice", k:"onMedicare", label:"Parts A & B active?", opts:[
+      {v:"yes",l:"Yes — active", sub:"→ Education (Already on Medicare)"},
+      {v:"no", l:"No — not yet",  sub:"→ CNA, then employer or T65"},
+      {v:"notsure", l:"Not sure", sub:"Verify on their card"}
     ]},
     {t:"say", text:"And do you personally make your own healthcare decisions?"},
     {t:"choice", k:"makesDecisions", label:"Makes their own healthcare decisions?", opts:YN},
-    {t:"warn", if:st=>A("makesDecisions")==="no",
+    {t:"warn", if:()=>A("makesDecisions")==="no",
       text:"<b>Stop.</b> You cannot present or enroll without the authorized representative or power of attorney on the line. Ask who handles their healthcare decisions and get that person on the call, or reschedule with them present."}
   ]},
 
@@ -575,7 +609,7 @@ const STEPS = [
     {t:"choice", k:"soa", label:"Clear verbal yes captured?", opts:[
       {v:"yes",l:"Yes — recorded"},{v:"no",l:"No / not yet"}
     ]},
-    {t:"warn", if:st=>A("soa")==="no",
+    {t:"warn", if:()=>A("soa")==="no",
       text:"<b>Do not proceed.</b> Without a Scope of Appointment on the recording you cannot discuss any of the four product categories above."}
   ]},
 
@@ -588,19 +622,28 @@ const STEPS = [
     {t:"say", text:"Perfect, so what I'm hearing is <i>(repeat their goal back)</i>. Does that sound about right?"},
     {t:"do", text:"Wait for confirmation."},
     {t:"say", text:"Perfect, is there anything else you want to go over today?"},
-    {t:"do", text:"<b>Loop.</b> Keep asking until they say there's nothing else, adding each answer above."}
+    {t:"do", text:"<b>Loop.</b> Keep asking until they say there's nothing else, adding each answer above."},
+    {t:"info", if:()=>isOnMedicare(),
+      text:"<b>Parts A &amp; B are active</b> — skip the standard needs assessment and go straight to Education (Already on Medicare). Next below."}
   ]},
 
-/* ---------------- 2. CNA ---------------- */
+/* ================= 2. CNA — shared opening (T65 + employer) ================= */
 { id:"cna-zip", sec:"CNA", title:"Zip code",
+  skip:()=> isOnMedicare(),
   blocks:[
     {t:"say", text:"So for starters, what's your zip code?"},
     {t:"do", text:"Wait for the response, then <b>repeat the zip code back to them.</b>"},
-    {t:"field", k:"zip", label:"Zip code", ph:"e.g. 64111", w:"sm"},
+    {t:"fields", items:[
+      {k:"zip", label:"Zip code", ph:"e.g. 64111", w:"sm"},
+      {k:"stateManual", label:"State", ph:()=>stateFromZip(A("zip"))||"auto", w:"sm",
+       hint:"Auto-detected from the zip. Only California changes what you can pitch."}
+    ]},
+    {t:"cablock"},
     {t:"say", text:"Awesome, got that down."}
   ]},
 
 { id:"cna-dob", sec:"CNA", title:"Date of birth",
+  skip:()=> isOnMedicare(),
   blocks:[
     {t:"say", text:"Now what is your date of birth?"},
     {t:"field", k:"dob", label:"Date of birth", type:"date", w:"md"},
@@ -612,10 +655,13 @@ const STEPS = [
       else          s += "Already past 65 by about <b>"+Math.abs(m)+" months</b>.";
       return s;
     }},
+    {t:"cablock"},
     {t:"say", text:"Perfect, got that here."}
   ]},
 
 { id:"cna-work", sec:"CNA", title:"Work status",
+  sub:"Employer coverage with over 20 employees exits here, straight to Education (Employer).",
+  skip:()=> isOnMedicare(),
   blocks:[
     {t:"say", text:"Tell me a little bit about your current situation — are you still working, are you retired, what does that look like?"},
     {t:"choice", k:"workStatus", label:"Work status", opts:[
@@ -626,19 +672,21 @@ const STEPS = [
     ]},
     {t:"field", k:"workNotes", label:"Details in their words", type:"textarea",
       ph:"What they said about work, timeline to retirement, spouse's situation…", w:"lg"},
-    {t:"say", if:()=>["working","partTime"].includes(A("workStatus")),
-      text:"Does your employer have over 20 employees?"},
-    {t:"choice", if:()=>["working","partTime"].includes(A("workStatus")),
-      k:"employerSize", label:"Employer size", opts:[
-      {v:"over20",  l:"Over 20 employees", sub:"Group plan stays primary"},
-      {v:"under20", l:"20 or fewer",       sub:"Medicare normally becomes primary"}
+    {t:"say", if:()=>hasEmployerJob(), text:"Does your employer have over 20 employees?"},
+    {t:"choice", if:()=>hasEmployerJob(), k:"employerSize", label:"Employer size", opts:[
+      {v:"over20",  l:"Over 20 employees", sub:"→ Education (Employer), skip the rest of the CNA"},
+      {v:"under20", l:"20 or fewer",       sub:"→ Must transition to Medicare, continue the CNA"}
     ]},
+    {t:"info", if:()=>isEmployerTrack(),
+      text:"<b>Over 20 employees.</b> Skip the rest of this needs assessment — Education (Employer) has its own questions and picks up next."},
     {t:"warn", if:()=>A("employerSize")==="under20",
-      text:"<b>20 or fewer employees.</b> Medicare is normally the primary payer at that size, so the standard 'delay Part A and B entirely' recommendation does not fit. This client will be routed to the T65 Medicare track instead of the employer track."}
+      text:"<b>20 or fewer employees — they must transition to Medicare.</b> Continue through the full needs assessment on the T65 track."}
   ]},
 
+/* ================= 2b. CNA — T65 only ================= */
 { id:"cna-ss", sec:"CNA", title:"Social Security status",
   sub:"This is the split between the two T65 avatars.",
+  skip:()=> !isT65(),
   blocks:[
     {t:"say", text:"Are you drawing Social Security yet?"},
     {t:"choice", k:"ssStatus", label:"Drawing Social Security?", opts:[
@@ -648,37 +696,32 @@ const STEPS = [
   ]},
 
 { id:"cna-coverage", sec:"CNA", title:"Current insurance carrier & source",
+  skip:()=> !isT65(),
   blocks:[
     {t:"say", text:"Tell me a little bit about your current health insurance — is that through your employer or through the marketplace?"},
     {t:"choice", k:"coverageSource", label:"Where the coverage comes from", opts:[
       {v:"employer",   l:"Employer group plan"},
       {v:"marketplace",l:"Marketplace / ACA"},
-      {v:"medicare",   l:"Already on a Medicare plan"},
       {v:"retiree",    l:"Retiree / COBRA / union"},
       {v:"none",       l:"No coverage right now"}
-    ]},
-    {t:"say", if:()=>A("coverageSource")==="employer" && !A("employerSize"),
-      text:"Does your employer have over 20 employees?"},
-    {t:"choice", if:()=>A("coverageSource")==="employer" && !A("employerSize"),
-      k:"employerSize", label:"Employer size", opts:[
-      {v:"over20", l:"Over 20 employees"},{v:"under20", l:"20 or fewer"}
     ]},
     {t:"say", text:"What carrier is that with?"},
     {t:"say", text:"And is that an HMO… PPO?"},
     {t:"fields", items:[
-      {k:"carrier",  label:"Carrier",   ph:"e.g. Blue Cross, Kaiser, Aetna", w:"md"},
+      {k:"carrier",  label:"Carrier",  ph:"e.g. Blue Cross, Kaiser, Aetna", w:"md"},
       {k:"planType", label:"HMO / PPO / other", ph:"HMO, PPO, EPO, HDHP…",  w:"md"}
     ]}
   ]},
 
 { id:"cna-premium", sec:"CNA", title:"Monthly premium",
+  skip:()=> !isT65(),
   blocks:[
     {t:"say", text:"What are you paying for that right now on a month to month basis?"},
     {t:"field", k:"currentPremium", label:"Current monthly premium", ph:"$", w:"sm"}
   ]},
 
 { id:"cna-deduct", sec:"CNA", title:"Deductible & max out of pocket",
-  sub:"The max out of pocket comes back later — it is the whole basis of the employer-track pitch.",
+  skip:()=> !isT65(),
   blocks:[
     {t:"say", text:"And then you may not know this next part off the top of your head, but if you have your insurance card it should read off of there. What is your deductible and maximum out of pocket?"},
     {t:"fields", items:[
@@ -690,7 +733,8 @@ const STEPS = [
       ph:"Their story — this is your best material for the exposure conversation later.", w:"lg"}
   ]},
 
-{ id:"cna-health", sec:"CNA", title:"Health history",
+{ id:"cna-health", sec:"CNA", title:"Health history & prescriptions",
+  skip:()=> !isT65(),
   blocks:[
     {t:"choice", k:"healthTone", label:"Which read fits what you've heard so far?", opts:[
       {v:"healthy", l:"“Sounds like you're pretty healthy”"},
@@ -711,6 +755,7 @@ const STEPS = [
 
 { id:"cna-dental", sec:"CNA", title:"Dental importance",
   sub:"Umbrella driver — a yes here adds $50 to the Medicare Supplement umbrella.",
+  skip:()=> !isT65(),
   blocks:[
     {t:"say", text:"My next question would be, is dental insurance important to you, and do you currently have that with your employer or through the marketplace?"},
     {t:"choice", k:"dentalImport", label:"Is dental important to them?", opts:[
@@ -718,10 +763,12 @@ const STEPS = [
       {v:"no",  l:"No — not a priority",      sub:"No umbrella impact"}
     ]},
     {t:"field", k:"dentalNow", label:"Do they have dental today, and where?", ph:"Employer, marketplace, standalone, none…", w:"lg"},
-    {t:"info", text:"Dental only prices into the <b>Supplement</b> umbrella. A Medicare Advantage plan already bundles dental, so it adds nothing on that side."}
+    {t:"info", if:()=>!caBlocked(), text:"Dental only prices into the <b>Supplement</b> umbrella. A Medicare Advantage plan already bundles dental, so it adds nothing on that side."},
+    {t:"cablock"}
   ]},
 
 { id:"cna-exposures", sec:"CNA", title:"Major exposures — the set-up",
+  skip:()=> !isT65(),
   blocks:[
     {t:"say", text:"Now, in that webinar do you remember how we highlight major exposures?"},
     {t:"do", text:"Wait for the response."},
@@ -731,6 +778,7 @@ const STEPS = [
 
 { id:"cna-chs", sec:"CNA", title:"Cancer, heart attack, stroke",
   sub:"Umbrella driver — a yes here adds $50 to both umbrellas.",
+  skip:()=> !isT65(),
   blocks:[
     {t:"say", text:"For starters — cancer, heart attack, stroke. Do we have any personal or family history with the big three?"},
     {t:"field", k:"chsHistory", label:"Personal / family history with the big three", type:"textarea",
@@ -746,6 +794,7 @@ const STEPS = [
 
 { id:"cna-snf", sec:"CNA", title:"Skilled nursing",
   sub:"Umbrella driver — a yes here adds $50 to the Supplement umbrella and $100 to the Advantage umbrella.",
+  skip:()=> !isT65(),
   blocks:[
     {t:"say", text:"Now the next big exposure we see is skilled nursing. Do you have any personal or family history with that, and are you familiar with how that coverage functions with Medicare?"},
     {t:"field", k:"snfHistory", label:"Skilled nursing history / familiarity", type:"textarea",
@@ -762,10 +811,8 @@ const STEPS = [
   ]},
 
 { id:"cna-partb", sec:"CNA", title:"Part B premium — income qualification",
-  sub:"Skipped entirely on the employer track.",
-  skip:()=> isEmployerTrack(),
+  skip:()=> !isT65(),
   blocks:[
-    {t:"do", text:"Employer-coverage clients skip this section and go straight to education. You're seeing it because this client is transitioning to Medicare."},
     {t:"say", text:"Now, when you transition to Medicare you'll be responsible for a Part B premium — however that premium is going to be very dependent on your household income. Do you know where that's at at this moment in time?"},
     {t:"field", k:"income", label:"Household income", ph:"$", w:"md"},
     {t:"say", text:"And has that been pretty consistent over the last two years?"},
@@ -777,7 +824,7 @@ const STEPS = [
   ]},
 
 { id:"cna-retirement", sec:"CNA", title:"Retirement assets",
-  skip:()=> isEmployerTrack(),
+  skip:()=> !isT65(),
   blocks:[
     {t:"say", text:"And another thing that can impact your Part B premium, which not a lot of people think about — do you have any retirement accounts that have over $200,000 in qualified assets or more?"},
     {t:"choice", k:"assets200k", label:"Over $200,000 in qualified assets?", opts:[
@@ -793,16 +840,69 @@ const STEPS = [
   ]},
 
 { id:"cna-close", sec:"CNA", title:"Close out the CNA",
+  skip:()=> !isT65(),
   blocks:[
     {t:"say", text:"Awesome, that wraps up the needs assessment. Now we're going to walk through your options and answer the questions you had at the beginning."},
     {t:"avatarcard"}
   ]},
 
-/* ---------------- 3. EDUCATION — EMPLOYER TRACK ---------------- */
-{ id:"emp-delay", sec:"Education", title:"Recommendation #1 — delay Part A & Part B",
+/* ================= 3. EDUCATION (EMPLOYER) — its own needs assessment ================= */
+{ id:"emp-ss", sec:"CNA", title:"Employer track — Social Security status",
+  sub:"Drawing Social Security changes both the delay recommendation and the L564 instructions.",
   skip:()=> !isEmployerTrack(),
   blocks:[
-    {t:"say", text:"So right now this transition to Medicare does not make much sense for you, so my first recommendation would be to <b>delay Part A and Part B entirely.</b> You have a strong plan with your employer and your premiums are pretty low."},
+    {t:"say", text:"Are you drawing Social Security yet?"},
+    {t:"choice", k:"ssStatus", label:"Drawing Social Security?", opts:[
+      {v:"yes", l:"Yes", sub:"Delay Part B only — Part A is automatic"},
+      {v:"no",  l:"No",  sub:"Delay Part A and Part B entirely"}
+    ]},
+    {t:"warn", if:()=>A("ssStatus")==="yes",
+      text:"<b>Take note.</b> They're drawing Social Security, so they will be automatically enrolled in Part A and will need to <b>request to delay Part B</b>."}
+  ]},
+
+{ id:"emp-coverage", sec:"CNA", title:"Employer track — carrier & plan",
+  skip:()=> !isEmployerTrack(),
+  blocks:[
+    {t:"say", text:"Tell me a little bit about your current health insurance — is that through your employer?"},
+    {t:"choice", k:"empCoverageIsEmployer", label:"Coverage is through the employer?", opts:YN},
+    {t:"warn", if:()=>A("empCoverageIsEmployer")==="no",
+      text:"The delay recommendation rests on them having <b>creditable employer coverage</b>. If the plan isn't through the employer, find out what it actually is before you recommend delaying anything."},
+    {t:"say", text:"What carrier is that with?"},
+    {t:"say", text:"And is that an HMO… PPO?"},
+    {t:"fields", items:[
+      {k:"carrier",  label:"Carrier",  ph:"e.g. Blue Cross, Kaiser, Aetna", w:"md"},
+      {k:"planType", label:"HMO / PPO / other", ph:"HMO, PPO, EPO, HDHP…",  w:"md"}
+    ]}
+  ]},
+
+{ id:"emp-premium", sec:"CNA", title:"Employer track — monthly premium",
+  skip:()=> !isEmployerTrack(),
+  blocks:[
+    {t:"say", text:"What are you paying for that right now on a month to month basis?"},
+    {t:"field", k:"currentPremium", label:"Current monthly premium", ph:"$", w:"sm"}
+  ]},
+
+{ id:"emp-moop", sec:"CNA", title:"Employer track — max out of pocket",
+  sub:"This number is the entire basis of the Gold / Silver / Bronze pitch. Do not leave it blank.",
+  skip:()=> !isEmployerTrack(),
+  blocks:[
+    {t:"say", text:"And then you may not know this next part off the top of your head, but if you have your insurance card it should read off of there. What is your maximum out of pocket?"},
+    {t:"field", k:"maxOOP", label:"Max out of pocket", ph:"$", w:"sm"},
+    {t:"say", text:"Have you hit that max out of pocket, and if so what happened?"},
+    {t:"field", k:"hitDeductible", label:"What happened", type:"textarea",
+      ph:"Their story — you have no other exposure conversation on this track, so this is your material.", w:"lg"},
+    {t:"do", text:"Get their commitment before you move on."},
+    {t:"say", text:"Yeah, that makes sense. So I have all the information I need and have two recommendations for you."}
+  ]},
+
+{ id:"emp-delay", sec:"Education", title:"Recommendation #1 — delay Medicare",
+  skip:()=> !isEmployerTrack(),
+  blocks:[
+    {t:"say", if:()=>A("ssStatus")!=="yes",
+      text:"So right now this transition to Medicare does not make much sense for you, so my first recommendation would be to <b>delay Part A and Part B entirely.</b> You have a strong plan with your employer and your premiums are pretty low."},
+    {t:"say", if:()=>A("ssStatus")==="yes",
+      text:"So right now this transition to Medicare does not make much sense for you, so my first recommendation would be to <b>delay Part B entirely</b> — but you will be automatically enrolled in Part A, because you're drawing Social Security. You have a strong plan with your employer and your premiums are pretty low."},
+    {t:"do", if:()=>!A("ssStatus"), text:"Answer the Social Security question a step back — it decides whether this is \"delay Part A and Part B\" or \"delay Part B only.\""},
     {t:"do", text:()=> "Their plan: <b>"+(A("carrier")||"[carrier]")+"</b> at <b>"+(A("currentPremium")?money(num(A("currentPremium"))):"[premium]")+"/mo</b>, max out of pocket <b>"+(A("maxOOP")?money(num(A("maxOOP"))):"[max OOP]")+"</b>."}
   ]},
 
@@ -816,33 +916,53 @@ const STEPS = [
 { id:"emp-l564", sec:"Education", title:"CMS L564 — the hall pass",
   skip:()=> !isEmployerTrack(),
   blocks:[
-    {t:"say", text:"Now when you do decide to retire, or you lose that creditable coverage, that's when you take action. That's when you take <b>CMS L564</b> — it's a form you'll take to your HR department and they'll help you fill it out. Then you'll take that form and you're gonna submit it along with your application for Part A and Part B. That form is basically your <b>hall pass that voids all penalties.</b> Are we clear on that?"},
+    {t:"say", text:()=>{
+      const parts = A("ssStatus")==="yes" ? "<b>Part B</b>" : "<b>Part A and Part B</b>";
+      return "Now when you do decide to retire, or you lose that creditable coverage, that's when you take action. That's when you take <b>CMS L564</b> — it's a form you'll take to your HR department and they'll help you fill it out. Then you'll take that form and you're gonna submit it along with your application for "+parts+". That form is basically your <b>hall pass that voids all penalties.</b> Are we clear on that?";
+    }},
     {t:"do", text:"Wait for the response."},
     {t:"choice", k:"empUnderstands", label:"Confirmed they're clear on both?", opts:[
       {v:"yes",l:"Yes — clear"},{v:"partial",l:"Re-explained"},{v:"no",l:"Still unclear"}
     ]}
   ]},
 
+{ id:"emp-ca-stop", sec:"Close", title:"California — education only",
+  sub:"65 or older in California. There is no second recommendation to make on this call.",
+  skip:()=> !(isEmployerTrack() && caBlocked()),
+  blocks:[
+    {t:"cablock"},
+    {t:"do", text:"Gold / Silver / Bronze is an ancillary product and <b>cannot be pitched.</b> They're staying on employer coverage, so there is no Medicare plan to present in its place. This call ends as education."},
+    {t:"say", text:"So {name}, that's really my recommendation for you today — hold onto that employer plan, delay Medicare, and hang onto that CMS L564 form for whenever you decide to retire. Do you have any questions on any of that?"},
+    {t:"do", text:"Answer their questions and confirm they know how to reach you when their coverage situation changes."},
+    {t:"say", text:"And when that time does come and you lose that creditable coverage, you give us a call and we'll walk you through the whole transition — that's what we're here for."},
+    {t:"field", k:"followUp", label:"When to follow up", type:"textarea",
+      ph:"Expected retirement date, when their coverage changes, when to check back in.", w:"lg"},
+    {t:"choice", k:"outcome", label:"Call outcome", opts:[
+      {v:"education", l:"Education only — CA ancillary block"},
+      {v:"followup",  l:"Follow-up scheduled"}
+    ]}
+  ]},
+
 { id:"emp-gaps", sec:"Education", title:"Recommendation #2 — cover the gaps",
-  skip:()=> !isEmployerTrack(),
+  skip:()=> !isEmployerTrack() || caBlocked(),
   blocks:[
     {t:"say", text:"Now my second recommendation would be to protect you from the gaps that employer plans typically leave behind."},
     {t:"info", text:"<b>Step 1</b> — reiterate their exposure (max out of pocket) &nbsp;·&nbsp; <b>Step 2</b> — explain the risk &nbsp;·&nbsp; <b>Step 3</b> — present Gold / Silver / Bronze."},
     {t:"say", text:"So right now, your employer plan has a max out of pocket of {moop}."},
     {t:"say", text:"What this means is, god forbid you have a bad health year, it's very likely you will pay {moop} for your healthcare <b>plus</b> potentially have loss of income — which are two significant exposures."},
-    {t:"do", if:()=>!A("maxOOP"), text:"You never captured their max out of pocket. Go back to the CNA and get it — this step doesn't land without a real number."}
+    {t:"do", if:()=>!A("maxOOP"), text:"You never captured their max out of pocket. Go back and get it — this step doesn't land without a real number."}
   ]},
 
 { id:"emp-write", sec:"Education", title:"Have them write it down",
-  skip:()=> !isEmployerTrack(),
+  skip:()=> !isEmployerTrack() || caBlocked(),
   blocks:[
     {t:"say", text:"That's where our <b>Gold, Silver and Bronze</b> options come in — they're designed to cover those big out-of-pocket risks while you stay on your employer plan."},
     {t:"say", text:"Now {name}, I want you to write down Gold, Silver and Bronze, and let me know once you've got that down."},
     {t:"do", text:"<b>Wait for confirmation before every single tier below.</b> One at a time. This is the pace of the whole close."}
   ]},
 
-{ id:"emp-gold", sec:"Education", title:"Gold — $150/mo",
-  skip:()=> !isEmployerTrack(),
+{ id:"emp-tiers", sec:"Education", title:"Gold, Silver, Bronze",
+  skip:()=> !isEmployerTrack() || caBlocked(),
   blocks:[
     {t:"say", text:"Awesome, so next to Gold I want you to put <b>$30,000 for Cancer</b> and <b>$30,000 for Heart Attack and Stroke</b>, for a total benefit of <b>$60,000</b>. That will be <b>$150 per month</b>. Let me know once you got that."},
     {t:"do", text:"Wait for confirmation."},
@@ -854,7 +974,7 @@ const STEPS = [
   ]},
 
 { id:"emp-choose", sec:"Close", title:"Get the commitment",
-  skip:()=> !isEmployerTrack(),
+  skip:()=> !isEmployerTrack() || caBlocked(),
   blocks:[
     {t:"say", text:"Awesome, so based on these prices, which option do you feel like you can comfortably afford on top of your employer coverage?"},
     {t:"do", text:"<b>Ask, then stop talking.</b> The first one to talk loses."},
@@ -869,7 +989,7 @@ const STEPS = [
   ]},
 
 { id:"emp-close", sec:"Close", title:"Address & application",
-  skip:()=> !isEmployerTrack(),
+  skip:()=> !isEmployerTrack() || caBlocked(),
   blocks:[
     {t:"say", text:"Sounds good, so what would be a good address to send policy packets and information?"},
     {t:"field", k:"address", label:"Street address", type:"textarea", ph:"Street, city, state, zip", w:"lg"},
@@ -886,53 +1006,142 @@ const STEPS = [
     {t:"do", text:"Handle any remaining objections and <b>always end with a pre-emptive close.</b>"}
   ]},
 
-/* ---------------- 4. MEDICARE EDUCATION ---------------- */
-{ id:"med-review", sec:"Education", title:"Current plan review",
-  sub:"They're already on Medicare — find out exactly what they have before you educate.",
-  skip:()=> avatar()!=="medicare",
+/* ================= 4. EDUCATION (ALREADY ON MEDICARE) — its own needs assessment ================= */
+{ id:"m4-zip", sec:"CNA", title:"Zip code",
+  sub:"Already on Medicare — this track has its own short needs assessment.",
+  skip:()=> !isOnMedicare(),
   blocks:[
-    {t:"say", text:"Perfect, so since you're already on Medicare, let me get a picture of what you have today before I make any recommendation."},
-    {t:"choice", k:"currentMedType", label:"What do they have now?", opts:[
-      {v:"supp", l:"Medicare Supplement"},
-      {v:"ma",   l:"Medicare Advantage"},
-      {v:"none", l:"Original Medicare only"},
-      {v:"unsure", l:"Not sure"}
-    ]},
+    {t:"say", text:"So for starters, what's your zip code?"},
+    {t:"do", text:"Wait for the response, then <b>repeat the zip code back to them.</b>"},
     {t:"fields", items:[
-      {k:"currentMedPlanCarrier", label:"Carrier", ph:"e.g. Aetna, Humana, UHC", w:"md"},
-      {k:"currentMedPlanName",    label:"Plan name / letter", ph:"Plan G, Plan N, HMO name…", w:"md"},
-      {k:"currentMedPremium",     label:"What they pay now", ph:"$", w:"sm"}
+      {k:"zip", label:"Zip code", ph:"e.g. 64111", w:"sm"},
+      {k:"stateManual", label:"State", ph:()=>stateFromZip(A("zip"))||"auto", w:"sm",
+       hint:"Auto-detected from the zip. Only California changes what you can pitch."}
     ]},
-    {t:"say", text:"And do you have a separate prescription drug plan, and any dental or vision on top of that?"},
-    {t:"field", k:"currentAncillary", label:"Part D / dental / vision / ancillary today", ph:"", w:"lg"},
-    {t:"say", text:"And what's got you looking at making a change this year?"},
-    {t:"field", k:"switchReason", label:"Why they're shopping", type:"textarea",
-      ph:"Rate increase, denial, doctor left the network, moving, benefits cut…", w:"lg"},
-    {t:"choice", k:"enrollWindow", label:"What window are we working in?", opts:[
-      {v:"aep", l:"AEP", sub:"Oct 15 – Dec 7"},
-      {v:"oep", l:"MA OEP", sub:"Jan 1 – Mar 31"},
-      {v:"sep", l:"SEP", sub:"Qualifying event"},
-      {v:"uw",  l:"Underwriting", sub:"Supplement, outside guaranteed issue"}
-    ]},
-    {t:"warn", if:()=>A("enrollWindow")==="uw",
-      text:"Outside guaranteed issue, a Supplement means <b>medical underwriting</b> and they can be declined. Set that expectation now, before you present, and keep the Advantage option alive as the fallback."},
-    {t:"field", k:"effectiveDate", label:"Target effective date", type:"date", w:"md"}
+    {t:"cablock"},
+    {t:"say", text:"Awesome, got that down."}
   ]},
 
+{ id:"m4-dob", sec:"CNA", title:"Date of birth",
+  skip:()=> !isOnMedicare(),
+  blocks:[
+    {t:"say", text:"Now what is your date of birth?"},
+    {t:"field", k:"dob", label:"Date of birth", type:"date", w:"md"},
+    {t:"do", if:()=>age()!==null, text:()=>"Age <b>"+age()+"</b>."},
+    {t:"cablock"},
+    {t:"say", text:"Perfect, got that here."}
+  ]},
+
+{ id:"m4-coverage", sec:"CNA", title:"Current carrier & plan",
+  skip:()=> !isOnMedicare(),
+  blocks:[
+    {t:"say", text:"Tell me a little bit about your current health insurance — what carrier is that with?"},
+    {t:"say", text:"And is that an HMO… PPO?"},
+    {t:"fields", items:[
+      {k:"carrier",  label:"Carrier",  ph:"e.g. Aetna, Humana, UHC", w:"md"},
+      {k:"planType", label:"HMO / PPO / other", ph:"HMO, PPO…",     w:"md"}
+    ]}
+  ]},
+
+{ id:"m4-premium", sec:"CNA", title:"Monthly premium",
+  skip:()=> !isOnMedicare(),
+  blocks:[
+    {t:"say", text:"What are you paying for that right now on a month to month basis?"},
+    {t:"field", k:"currentPremium", label:"Current monthly premium", ph:"$", w:"sm"}
+  ]},
+
+{ id:"m4-moop", sec:"CNA", title:"Max out of pocket",
+  skip:()=> !isOnMedicare(),
+  blocks:[
+    {t:"say", text:"And then you may not know this next part off the top of your head, but if you have your insurance card it should read off of there. What is your maximum out of pocket?"},
+    {t:"field", k:"maxOOP", label:"Max out of pocket", ph:"$", w:"sm"},
+    {t:"say", text:"Have you hit that max out of pocket, and if so what happened?"},
+    {t:"field", k:"hitDeductible", label:"What happened", type:"textarea", ph:"Their story.", w:"lg"}
+  ]},
+
+{ id:"m4-dental", sec:"CNA", title:"Dental",
+  sub:"Umbrella driver — the second question is the one that prices.",
+  skip:()=> !isOnMedicare(),
+  blocks:[
+    {t:"say", text:"And are you carrying any dental insurance right now?"},
+    {t:"field", k:"dentalNow", label:"Dental they carry today", ph:"Carrier, standalone, bundled with their plan, none…", w:"lg"},
+    {t:"say", text:"<span class='q'>Is that coverage important to you?</span>"},
+    {t:"choice", k:"dentalImport", label:"Is dental important to them?", opts:[
+      {v:"yes", l:"Yes — it matters to them", sub:"+$50 Supplement umbrella"},
+      {v:"no",  l:"No — not a priority",      sub:"No umbrella impact"}
+    ]},
+    {t:"cablock"}
+  ]},
+
+{ id:"m4-exposures", sec:"CNA", title:"Major exposures — the set-up",
+  skip:()=> !isOnMedicare(),
+  blocks:[
+    {t:"say", text:"Gotcha. Now, in that webinar do you remember how we highlight major exposures?"},
+    {t:"do", text:"Wait for the response."},
+    {t:"say", text:"Major exposures can really stem from any plan — whether it's your current plan with {carrier}, or any other Medicare plan — but really in relation to two specific things."}
+  ]},
+
+{ id:"m4-chs", sec:"CNA", title:"Cancer, heart attack, stroke",
+  sub:"Get their commitment on this one — not just an answer.",
+  skip:()=> !isOnMedicare(),
+  blocks:[
+    {t:"say", text:"For starters — cancer, heart attack, stroke. Do we have any personal or family history with the big three?"},
+    {t:"field", k:"chsHistory", label:"Personal / family history with the big three", type:"textarea",
+      ph:"Who, what, when — use their own words back to them later.", w:"lg"},
+    {t:"say", text:"I really appreciate you sharing that with me… and the reason we bring this up — I'll share a personal note. My grandmother had cancer three times, and she was on Medicare and had great coverage, but even with that coverage she had to pay <b>$15,000</b> out of her own pocket for non-approved expenses."},
+    {t:"say", text:"<span class='q'>Is something like that going to be a concern for you?</span>"},
+    {t:"do", text:"<b>Get their commitment.</b> Not a shrug — a yes."},
+    {t:"choice", k:"chsConcern", label:"Is CHS a concern for them?", opts:[
+      {v:"yes", l:"Yes — committed", sub:"+$50 to both umbrellas"},
+      {v:"no",  l:"No",              sub:"No umbrella impact"}
+    ]}
+  ]},
+
+{ id:"m4-snf", sec:"CNA", title:"Skilled nursing",
+  sub:"Get their commitment on this one too.",
+  skip:()=> !isOnMedicare(),
+  blocks:[
+    {t:"say", text:"Now the next big exposure we see is skilled nursing. Do you have any personal or family history with that, and are you familiar with how that coverage functions with Medicare?"},
+    {t:"field", k:"snfHistory", label:"Skilled nursing history / familiarity", type:"textarea",
+      ph:"Their experience and how much they already understand.", w:"lg"},
+    {t:"say", text:"Medicare will help cover up to day 100 as long as you had a <b>3 day hospital stay</b> and are <b>showing signs of improvement</b>… but after day 100 you are responsible for all costs. And it's really important we focus on that 3 day hospital stay and showing signs of improvement."},
+    {t:"say", text:"I had a client who was in skilled nursing for ten days and her insurance plan, Kaiser, said she was not improving and doing the exercises because she had a stroke — so they ended her care and she had to go home and pay <b>$20,000</b> out of pocket for home care. So I'm assuming this will be a concern as well?"},
+    {t:"do", text:"<b>Get their commitment.</b>"},
+    {t:"choice", k:"snfConcern", label:"Is skilled nursing a concern for them?", opts:[
+      {v:"yes", l:"Yes — committed", sub:"+$50 Supplement · +$100 Advantage"},
+      {v:"no",  l:"No",              sub:"No umbrella impact"}
+    ]},
+    {t:"say", text:"And yeah, we'll come back to that in greater detail, but I really just wanted to make sure you're aware of these exposures."},
+    {t:"umbrella"}
+  ]},
+
+{ id:"m4-gate", sec:"Education", title:"Do they want the rundown?",
+  sub:"Their answer decides whether you teach Supplement vs Advantage or go straight to the numbers.",
+  skip:()=> !isOnMedicare(),
+  blocks:[
+    {t:"say", text:"Now I have pretty much everything I need, and before we dive into pricing I always prefer to do a quick rundown of the difference between Medicare Advantage and Supplement — would you like that?"},
+    {t:"choice", k:"wantsEducation", label:"Do they want the rundown?", opts:[
+      {v:"yes", l:"Yes — walk them through it", sub:"→ Supplement & Advantage education"},
+      {v:"no",  l:"No — go to pricing",         sub:"→ Skip straight to the numbers"}
+    ]},
+    {t:"do", if:()=>A("wantsEducation")==="no",
+      text:"They already know the difference. Skipping the education — pricing is next. Don't re-teach it unless they ask."}
+  ]},
+
+/* ================= 5. MEDICARE EDUCATION — T65 only ================= */
 { id:"med-enroll", sec:"Education", title:"How you get onto Medicare",
-  skip:()=> !isMedTrack(),
+  skip:()=> !isT65(),
   blocks:[
     {t:"say", if:()=>avatar()==="t65ss",
       text:"So {name}, what is going to happen is, since you are on Social Security, you are going to be <b>automatically enrolled</b> into Original Medicare Part A and Part B."},
     {t:"say", if:()=>avatar()==="t65noss",
       text:"So {name}, since you are not on Social Security, we will have to get you <b>manually enrolled</b> into Part A and Part B — and we will make this process as easy as possible for you. When the time comes, three months before your birth month of {birthMonth}, we will be sending you the instructions to get this done, and Brandon has a very detailed video to help you with this step. It shouldn't take long — maybe about 10 minutes."},
-    {t:"say", if:()=>avatar()==="medicare",
-      text:"So {name}, you're already enrolled in Parts A and B, so that foundation is set — there's nothing to do there. What I want to do is make sure you understand exactly what that foundation covers and where it leaves you exposed, because that's what drives which direction we go from here."},
+    {t:"do", if:()=>!A("ssStatus"), text:"Answer the Social Security question in the CNA — it decides which paragraph you read here."},
     {t:"say", text:"Now, Original Medicare is what we call <b>the foundation of Medicare</b>. I believe Brandon mentioned this in the webinar, but let me break it down for you again."}
   ]},
 
 { id:"med-parts", sec:"Education", title:"Original Medicare — Parts A & B",
-  skip:()=> !isMedTrack(),
+  skip:()=> !isT65(),
   blocks:[
     {t:"say", text:"<b>Part A</b> covers hospital expenses and is premium-free."},
     {t:"say", text:"<b>Part B</b> covers doctor visits and medical services and has a monthly premium of <b>$202</b>."},
@@ -944,7 +1153,7 @@ const STEPS = [
   ]},
 
 { id:"med-risk", sec:"Education", title:"The exposure in Original Medicare alone",
-  skip:()=> !isMedTrack(),
+  skip:()=> !isT65(),
   blocks:[
     {t:"say", text:"Now, while Original Medicare is the foundation, we <b>never</b> recommend staying on it alone without additional coverage, because there's a lot of financial exposure with just Original Medicare."},
     {t:"say", text:"The biggest risk is the <b>20% coinsurance with no limit</b>. A $100,000 medical bill means you're responsible for <b>$20,000</b> out of pocket. And there is no cap on these costs, leaving you financially vulnerable."},
@@ -957,9 +1166,9 @@ const STEPS = [
     ]}
   ]},
 
-/* ---------------- 5. MED SUPP ---------------- */
+/* ================= 6. MEDICARE SUPPLEMENT EDUCATION ================= */
 { id:"supp", sec:"Plans", title:"Medicare Supplement education",
-  skip:()=> !isMedTrack(),
+  skip:()=> isEmployerTrack() || (isOnMedicare() && A("wantsEducation")==="no"),
   blocks:[
     {t:"say", text:"This is what we call the <b>Cadillac of health insurance</b>, because it provides the best coverage available. Now, it does come at a higher cost."},
     {t:"say", text:"<b>✅ Comprehensive coverage.</b> After you meet a <b>$283 annual deductible</b>, you are 100% covered for any medical costs. No matter the bill — $100,000 or even a million dollars — you won't pay anything beyond that $283 deductible. The reason it's called Medigap is because it covers the gaps that Original Medicare doesn't cover, that 20%."},
@@ -972,9 +1181,9 @@ const STEPS = [
     {t:"field", k:"suppQuestions", label:"Their questions / reactions", type:"textarea", ph:"", w:"lg"}
   ]},
 
-/* ---------------- 6. MEDICARE ADVANTAGE ---------------- */
+/* ================= 7. MEDICARE ADVANTAGE EDUCATION ================= */
 { id:"ma", sec:"Plans", title:"Medicare Advantage (Part C) education",
-  skip:()=> !isMedTrack(),
+  skip:()=> isEmployerTrack() || (isOnMedicare() && A("wantsEducation")==="no"),
   blocks:[
     {t:"say", text:"This is a more affordable option compared to the supplement plan, and it's structured differently."},
     {t:"say", text:"<b>✅ Low monthly cost.</b> Many plans have low monthly premiums, and it includes your medical, prescription drug coverage, and additional benefits like <b>dental, vision and hearing</b> at no extra cost."},
@@ -986,20 +1195,29 @@ const STEPS = [
     {t:"field", k:"maQuestions", label:"Their questions / reactions", type:"textarea", ph:"", w:"lg"}
   ]},
 
-/* ---------------- 7. PRICING ---------------- */
+/* ================= 8. PRICING ================= */
 { id:"pricing", sec:"Pricing", title:"Pricing breakdown for both options",
-  sub:"The umbrella is already priced from their CNA answers. Quote one number per option.",
-  skip:()=> !isMedTrack(),
+  skip:()=> isEmployerTrack(),
+  sub:()=> caBlocked()
+    ? "No ancillary on this call — quote the plan on its own, with no umbrella."
+    : "The umbrella is already priced from their needs assessment. Quote one number per option.",
   blocks:[
     {t:"say", text:"Now that we've gone over the benefits of both plans, let's talk about cost."},
+    {t:"cablock"},
     {t:"pricing"},
-    {t:"say", text:"For the <b>Medicare Supplement</b>, that's the Plan G premium, plus about $10 a month for your Part D drug plan, plus your umbrella coverage — one price, all in, at <b>{suppTotal} a month</b>. Once you meet the small annual deductible of $283 for the year, you owe <b>$0</b> for covered medical services — so no surprise bills."},
-    {t:"say", text:"For <b>Medicare Advantage</b>, the plan premium is usually $0, plus your umbrella coverage — one price, all in, at <b>{maTotal} a month</b>. You'll just have some small copays for doctor and specialist visits."},
+    {t:"say", if:()=>!caBlocked(),
+      text:"For the <b>Medicare Supplement</b>, that's the Plan G premium, plus about $10 a month for your Part D drug plan, plus your umbrella coverage — one price, all in, at <b>{suppTotal} a month</b>. Once you meet the small annual deductible of $283 for the year, you owe <b>$0</b> for covered medical services — so no surprise bills."},
+    {t:"say", if:()=>caBlocked(),
+      text:"For the <b>Medicare Supplement</b>, that's the Plan G premium plus about $10 a month for your Part D drug plan — <b>{suppTotal} a month</b>. Once you meet the small annual deductible of $283 for the year, you owe <b>$0</b> for covered medical services — so no surprise bills."},
+    {t:"say", if:()=>!caBlocked(),
+      text:"For <b>Medicare Advantage</b>, the plan premium is usually $0, plus your umbrella coverage — one price, all in, at <b>{maTotal} a month</b>. You'll just have some small copays for doctor and specialist visits."},
+    {t:"say", if:()=>caBlocked(),
+      text:"For <b>Medicare Advantage</b>, the plan premium is usually $0 — <b>{maTotal} a month</b>. You'll just have some small copays for doctor and specialist visits."},
     {t:"do", text:"Quote the <b>single all-in number</b>. Don't itemize it out loud unless they ask."}
   ]},
 
 { id:"lean", sec:"Pricing", title:"Which option are they leaning toward?",
-  skip:()=> !isMedTrack(),
+  skip:()=> isEmployerTrack(),
   blocks:[
     {t:"say", text:"Now that we've gone through both options and the detailed pricing breakdown, which route do you feel yourself leaning toward as of now?"},
     {t:"do", text:"<b>PAUSE.</b> Let them answer."},
@@ -1016,24 +1234,29 @@ const STEPS = [
   ]},
 
 { id:"recommend", sec:"Pricing", title:"Your formal recommendation",
-  skip:()=> !isMedTrack(),
+  skip:()=> isEmployerTrack(),
   blocks:[
     {t:"do", text:"Read their goals and notes back to them <b>in their own words</b> before you make the recommendation. The panel below is your read-back."},
     {t:"readback"},
-    {t:"say", text:"Based on everything you shared today — <i>(read back your notes from the call)</i> — my formal recommendation would be the <b>{planType}</b>, with umbrella coverage at <b>{umbPrice}</b> a month, for about <b>{planTotal} a month</b> all in."},
+    {t:"say", if:()=>!caBlocked(),
+      text:"Based on everything you shared today — <i>(read back your notes from the call)</i> — my formal recommendation would be the <b>{planType}</b>, with umbrella coverage at <b>{umbPrice}</b> a month, for about <b>{planTotal} a month</b> all in."},
+    {t:"say", if:()=>caBlocked(),
+      text:"Based on everything you shared today — <i>(read back your notes from the call)</i> — my formal recommendation would be the <b>{planType}</b>, at about <b>{planTotal} a month</b>."},
     {t:"do", text:"<b>PAUSE. The first one to talk loses.</b>"}
   ]},
 
+/* ================= CLOSE ================= */
 { id:"steps", sec:"Close", title:"The 3 simple steps",
-  skip:()=> !isMedTrack(),
+  skip:()=> isEmployerTrack(),
   blocks:[
-    {t:"say", text:"Do you still have that piece of paper? Perfect — I want you to write this down, because this is how we will get everything done, in these 3 simple steps."},
+    {t:"say", if:()=>isT65(), text:"Do you still have that piece of paper? Perfect — I want you to write this down, because this is how we will get everything done, in these 3 simple steps."},
+    {t:"say", if:()=>isOnMedicare(), text:"Do you still have that piece of paper? Perfect — I want you to write this down, because this is how we will get everything done in these 3 simple steps."},
     {t:"threesteps"},
-    {t:"say", text:"<b>Step 1 is the only thing we need to knock out today.</b>"}
+    {t:"say", if:()=>!caBlocked(), text:"<b>Step 1 is the only thing we need to knock out today.</b>"}
   ]},
 
-{ id:"urgency", sec:"Close", title:"Why we do Step 1 today",
-  skip:()=> !isMedTrack(),
+{ id:"urgency", sec:"Close", title:"Why we do this today",
+  skip:()=> isEmployerTrack(),
   blocks:[
     {t:"say", text:"The reason we want to go ahead and handle this now is because we need to make sure we can get you <b>approved through underwriting</b>. That way, if for some reason one company doesn't approve of you, we still have time to pivot and find another option before your effective date."},
     {t:"say", text:"The other important part is once you're approved, this <b>locks in your rate based on your age right now</b> — so it's never going to jump because of your health later on."},
@@ -1042,7 +1265,7 @@ const STEPS = [
   ]},
 
 { id:"med-close", sec:"Close", title:"Address & application",
-  skip:()=> !isMedTrack(),
+  skip:()=> isEmployerTrack(),
   blocks:[
     {t:"say", text:"And what was going to be a good street address for you, so I make sure you receive your packages and cards?"},
     {t:"field", k:"address", label:"Street address", type:"textarea", ph:"Street, city, state, zip", w:"lg"},
@@ -1050,6 +1273,7 @@ const STEPS = [
       {k:"phone", label:"Best phone", ph:"", w:"md"},
       {k:"email", label:"Email",      ph:"", w:"md"}
     ]},
+    {t:"do", text:"Handle objections and <b>always end with a pre-emptive close.</b>"},
     {t:"choice", k:"outcome", label:"Call outcome", opts:[
       {v:"app",      l:"Application submitted"},
       {v:"umbonly",  l:"Umbrella only today"},
@@ -1115,6 +1339,7 @@ function renderBlock(b){
     case "threesteps":return threeStepsHTML();
     case "readback":  return readbackHTML();
     case "avatarcard":return avatarCardHTML();
+    case "cablock":   return caBlockHTML();
     case "summary":   return summaryHTML();
     default: return "";
   }
@@ -1130,6 +1355,7 @@ const SELECTS = {
 };
 function fieldHTML(f){
   const v = esc(A(f.k)), type = f.type||"text";
+  f = {...f, ph: typeof f.ph==="function" ? f.ph() : f.ph};
   const w = f.w||"";
   let inner;
   if(type==="textarea"){
@@ -1166,7 +1392,17 @@ function goalsHTML(){
 }
 
 /* ---- umbrella ---- */
+function caBlockHTML(){
+  if(!caBlocked()) return "";
+  return '<div class="b stopcard"><div class="stopcard-h">⛔ Compliance stop — no ancillary</div>'+
+    '<div class="stopcard-b"><p><b>'+esc(clientState())+', age '+age()+'.</b> '+esc(CA_RULE)+"</p>"+
+    "<p>The umbrella and the Gold / Silver / Bronze critical illness options are both off the table on this call. "+
+    "Present Medicare only.</p>"+
+    '<p class="fine">Driven by the zip and date of birth you captured. If either is wrong, correct it and this clears.</p>'+
+    "</div></div>";
+}
 function umbrellaHTML(compact){
+  if(caBlocked()) return caBlockHTML();
   const s = umbrella("supp"), m = umbrella("ma");
   const rows = (u,kind) => u.rows.map(r=>{
     const on = r.on && r.amt>0;
@@ -1175,7 +1411,7 @@ function umbrellaHTML(compact){
       (r.note&&r.on?' <span style="opacity:.7">('+esc(r.note)+")</span>":"")+"</td><td>"+amt+"</td></tr>";
   }).join("") + '<tr class="tot"><td>'+kind+' umbrella</td><td>'+money(u.value)+
     (u.overridden?' <span style="font-size:11px;font-weight:600;opacity:.7">override</span>':"")+"</td></tr>";
-  return '<div class="umb"><div class="umb-h">Umbrella — priced from the CNA</div><div class="umb-b">'+
+  return '<div class="umb"><div class="umb-h">Umbrella — priced from the needs assessment</div><div class="umb-b">'+
     '<div class="ucols">'+
       '<div class="ucol"><h5>Medicare Supplement</h5><table class="utab">'+rows(s,"Supplement")+"</table></div>"+
       '<div class="ucol"><h5>Medicare Advantage</h5><table class="utab">'+rows(m,"Advantage")+"</table></div>"+
@@ -1187,36 +1423,37 @@ function umbrellaHTML(compact){
     ((s.capped||m.capped)?'<div class="b warn" style="margin:12px 0 0"><span class="ic">⚠</span><span>Calculated above the $150 cap — capped at $150.</span></div>':"")+
     "</div></div>";
 }
-
 /* ---- pricing ---- */
 function pricingHTML(){
+  const blocked = caBlocked();
   const s = umbrella("supp"), m = umbrella("ma");
+  const suppRows =
+    "<tr><td>Plan G premium</td><td>"+money(num(A("planGPremium")))+"</td></tr>"+
+    "<tr><td>Part D drug plan</td><td>"+money(num(A("partDPremium")||10))+"</td></tr>"+
+    (blocked ? "" : "<tr><td>Umbrella</td><td>"+money(s.value)+"</td></tr>")+
+    '<tr class="tot"><td>Total monthly</td><td>'+money(suppTotal())+"</td></tr>";
+  const maRows =
+    "<tr><td>MAPD premium</td><td>"+money(num(A("mapdPremium")||0))+"</td></tr>"+
+    (blocked ? "" : "<tr><td>Umbrella</td><td>"+money(m.value)+"</td></tr>")+
+    '<tr class="tot"><td>Total monthly</td><td>'+money(maTotal())+"</td></tr>";
   return '<div class="b">'+
     '<div class="frow" style="margin-bottom:16px">'+
       fieldHTML({k:"planGPremium", label:"Plan G premium / mo", ph:"$", w:"sm"})+
       fieldHTML({k:"partDPremium", label:"Part D / mo", ph:"$10", w:"sm"})+
       fieldHTML({k:"mapdPremium",  label:"MAPD premium / mo", ph:"$0", w:"sm"})+
     "</div>"+
-    umbrellaHTML(false)+
+    (blocked ? "" : umbrellaHTML(false))+
     '<div class="ucols" style="margin-top:16px">'+
-      '<div class="ucol"><h5>👉 Medicare Supplement (Medigap)</h5><table class="utab">'+
-        "<tr><td>Plan G premium</td><td>"+money(num(A("planGPremium")))+"</td></tr>"+
-        "<tr><td>Part D drug plan</td><td>"+money(num(A("partDPremium")||10))+"</td></tr>"+
-        "<tr><td>Umbrella</td><td>"+money(s.value)+"</td></tr>"+
-        '<tr class="tot"><td>Total monthly</td><td>'+money(suppTotal())+"</td></tr></table>"+
-        '<div class="big" style="margin-top:8px">'+money(suppTotal())+'<small> /mo all in</small></div>'+
+      '<div class="ucol"><h5>👉 Medicare Supplement (Medigap)</h5><table class="utab">'+suppRows+"</table>"+
+        '<div class="big" style="margin-top:8px">'+money(suppTotal())+'<small> /mo'+(blocked?"":" all in")+'</small></div>'+
         '<div style="font-size:13px;color:var(--ink-3);margin-top:4px">$283 annual deductible, then $0 for covered services.</div>'+
       "</div>"+
-      '<div class="ucol"><h5>👉 Medicare Advantage (Part C)</h5><table class="utab">'+
-        "<tr><td>MAPD premium</td><td>"+money(num(A("mapdPremium")||0))+"</td></tr>"+
-        "<tr><td>Umbrella</td><td>"+money(m.value)+"</td></tr>"+
-        '<tr class="tot"><td>Total monthly</td><td>'+money(maTotal())+"</td></tr></table>"+
-        '<div class="big" style="margin-top:8px">'+money(maTotal())+'<small> /mo all in</small></div>'+
+      '<div class="ucol"><h5>👉 Medicare Advantage (Part C)</h5><table class="utab">'+maRows+"</table>"+
+        '<div class="big" style="margin-top:8px">'+money(maTotal())+'<small> /mo'+(blocked?"":" all in")+'</small></div>'+
         '<div style="font-size:13px;color:var(--ink-3);margin-top:4px">Small copays for doctor and specialist visits.</div>'+
       "</div>"+
     "</div></div>";
 }
-
 /* ---- employer CHS tiers ---- */
 function chsTiersHTML(){
   const t = [
@@ -1235,34 +1472,41 @@ function chsTiersHTML(){
 
 /* ---- 3 steps ---- */
 function threeStepsHTML(){
-  const av = avatar();
+  const av = avatar(), blocked = caBlocked();
   const price = A("leaning") ? money(recommendedUmbrella()) : "<span class='ph'>[umbrella price]</span>";
-  const plan  = A("leaning")==="supp" ? "Supplement" : A("leaning")==="ma" ? "Advantage" : "<span class='ph'>[Supplement / Advantage]</span>";
-  const lead  = A("leaning")==="supp" ? "6 months" : A("leaning")==="ma" ? "3 months" : "<span class='ph'>[6 / 3 months]</span>";
+  const plan  = A("leaning")==="supp" ? "Supplement" : A("leaning")==="ma" ? "Advantage"
+              : "<span class='ph'>[Supplement / Advantage]</span>";
+  const lead  = A("leaning")==="supp" ? "6 months" : A("leaning")==="ma" ? "3 months"
+              : "<span class='ph'>[6 / 3 months]</span>";
   const bm    = birthMonthName() ? "<b>"+birthMonthName()+"</b>" : "<span class='ph'>[birth month]</span>";
   const eff   = A("effectiveDate") ? "<b>"+esc(A("effectiveDate"))+"</b>" : "<span class='ph'>[effective date]</span>";
+  const umbStep = "We get your umbrella coverage set up for <b>"+price+"</b> a month.";
   let title, steps;
   if(av==="t65noss"){
     title = "📋 Scenario A — T65, not on Social Security";
-    steps = ["We get your umbrella coverage set up for <b>"+price+"</b> a month.",
+    steps = [umbStep,
              "We manually enroll you into Original Medicare Parts A &amp; B three months before your birth month of "+bm+" — it takes about 10 minutes.",
              "We enroll you into your <b>"+plan+"</b> plan "+lead+" before your 65th birthday."];
   } else if(av==="t65ss"){
     title = "📋 Scenario B — T65, on Social Security";
-    steps = ["We get your umbrella coverage set up for <b>"+price+"</b> a month.",
+    steps = [umbStep,
              "Since you're on Social Security you'll be automatically enrolled into Parts A &amp; B — we just confirm that's all set.",
              "We enroll you into your <b>"+plan+"</b> plan "+lead+" before your 65th birthday."];
   } else {
-    title = "📋 Scenario C — Already on Medicare / switching plans";
-    steps = ["We get your umbrella coverage set up for <b>"+price+"</b> a month.",
+    title = (blocked ? "📋 Close — already on Medicare" : "📋 3 step close — already on Medicare");
+    steps = [umbStep,
              "We review your current plan and lock in your new <b>"+plan+"</b> plan.",
              "Your new coverage kicks in on "+eff+"."];
   }
-  return '<div class="b umb"><div class="umb-h">'+title+'</div><div class="umb-b goals">'+
-    steps.map((s,i)=>'<div class="g"><span class="num">'+(i+1)+'</span><span class="txt">'+s+"</span></div>").join("")+
-    "</div></div>";
+  if(blocked) steps = steps.slice(1);   // no ancillary means no step 1
+  const effField = (av!=="t65noss" && av!=="t65ss")
+    ? '<div class="frow" style="margin-top:12px">'+fieldHTML({k:"effectiveDate",label:"Effective date",type:"date",w:"md"})+"</div>"
+    : "";
+  return '<div class="b umb"><div class="umb-h">'+title+(blocked?" · umbrella removed":"")+'</div><div class="umb-b goals">'+
+    (blocked?'<div class="b warn" style="margin:0 0 10px"><span class="ic">⚠</span><span>Step 1 was the umbrella — it cannot be pitched here, so this is a '+steps.length+'-step close.</span></div>':"")+
+    steps.map((x,i)=>'<div class="g"><span class="num">'+(i+1)+'</span><span class="txt">'+x+"</span></div>").join("")+
+    effField+"</div></div>";
 }
-
 /* ---- read-back ---- */
 function readbackHTML(){
   const bits = [];
@@ -1286,24 +1530,28 @@ function readbackHTML(){
 /* ---- avatar card ---- */
 function avatarCardHTML(){
   const av = avatar();
-  if(!av) return '<div class="b warn"><span class="ic">⚠</span><span>Avatar not determined yet — you still need the eligibility check, Social Security status and coverage source.</span></div>';
+  if(!av) return '<div class="b warn"><span class="ic">⚠</span><span>Route not determined yet — you still need the eligibility check, and either the employer size or the Social Security answer.</span></div>';
   const info = AVATARS[av];
   const why = [];
-  if(A("onMedicare")==="yes") why.push("already enrolled in Parts A &amp; B");
-  if(hasEmployerCoverage())   why.push("on an employer group plan");
-  if(A("employerSize"))       why.push(A("employerSize")==="over20"?"employer has over 20 employees":"employer has 20 or fewer employees");
-  if(A("ssStatus"))           why.push(A("ssStatus")==="yes"?"drawing Social Security":"not drawing Social Security");
+  if(A("onMedicare")==="yes")       why.push("Parts A &amp; B already active");
+  if(hasEmployerJob() && A("employerSize"))
+    why.push(A("employerSize")==="over20" ? "still working, employer over 20 employees"
+                                          : "employer has 20 or fewer, so they must transition");
+  if(A("ssStatus"))                 why.push(A("ssStatus")==="yes"?"drawing Social Security":"not drawing Social Security");
+  const next = av==="employer"
+    ? "Next up: delay Medicare, CMS L564, then Gold / Silver / Bronze. No Supplement, Advantage or umbrella on this track."
+    : av==="medicare"
+      ? "Next up: their own short needs assessment, then they choose whether they want the Supplement vs Advantage rundown."
+      : "Next up: Medicare education → Supplement → Advantage → pricing with the umbrella already calculated.";
   return '<div class="b umb"><div class="umb-h">Route for this call</div><div class="umb-b">'+
     '<div class="big" style="font-size:23px">'+esc(info.label)+"</div>"+
     '<div style="color:var(--ink-2);margin-top:4px">'+esc(info.track)+"</div>"+
     (why.length?'<div style="font-size:13px;color:var(--ink-3);margin-top:10px">Because: '+why.join(" · ")+"</div>":"")+
-    (av==="employer"
-      ? '<div class="b info" style="margin:12px 0 0">Next up: delay Part A &amp; B, CMS L564, then Gold / Silver / Bronze. This client does <b>not</b> get the Supplement / Advantage or umbrella presentation.</div>'
-      : '<div class="b info" style="margin:12px 0 0">Next up: Medicare education → Supplement → Advantage → pricing with the umbrella already calculated.</div>')+
+    '<div class="b info" style="margin:12px 0 0">'+next+"</div>"+
+    (caBlocked()?caBlockHTML():"")+
     '<div class="frow" style="margin-top:12px">'+fieldHTML({k:"avatarOverride",label:"Override the route (only if you disagree)",type:"select",w:"md"})+"</div>"+
     "</div></div>";
 }
-
 /* ---- summary ---- */
 function summaryLines(){
   const L=[], av=avatar();
@@ -1312,49 +1560,65 @@ function summaryLines(){
   p("Agent", A("agentName")); p("Client", A("clientName")||A("clientFirst"));
   p("Date", new Date().toLocaleString());
   p("Route", av?AVATARS[av].label:"not determined");
+  if(caBlocked()) p("Compliance", "CA ancillary block — no umbrella, no Gold/Silver/Bronze");
   if(S.goals.length) p("Goals", S.goals.map((g,i)=>(i+1)+". "+g).join(" | "));
-  L.push(["— CNA —",""]);
-  p("Zip", A("zip")); p("DOB", A("dob")+(age()!==null?" (age "+age()+")":""));
-  p("Work status", A("workStatus")); p("Employer size", A("employerSize"));
-  p("Drawing SS", A("ssStatus")); p("Coverage source", A("coverageSource"));
+
+  L.push(["— NEEDS ASSESSMENT —",""]);
+  p("Zip", A("zip")+(clientState()?" ("+clientState()+")":""));
+  p("DOB", A("dob")+(age()!==null?" (age "+age()+")":""));
+  if(!isOnMedicare()){ p("Work status", A("workStatus")); p("Employer size", A("employerSize")); }
+  p("Drawing SS", A("ssStatus"));
+  if(isEmployerTrack()) p("Coverage through employer", A("empCoverageIsEmployer"));
+  else if(isT65())      p("Coverage source", A("coverageSource"));
   p("Carrier", A("carrier")); p("Plan type", A("planType"));
-  p("Premium", A("currentPremium")); p("Deductible", A("deductible")); p("Max OOP", A("maxOOP"));
-  p("Hit deductible", A("hitDeductible")); p("Health history", A("healthHistory"));
-  p("Prescriptions", A("prescriptions"));
-  p("Dental important", A("dentalImport")); p("Dental today", A("dentalNow"));
-  p("CHS history", A("chsHistory")); p("CHS a concern", A("chsConcern"));
-  p("Skilled nursing history", A("snfHistory")); p("Skilled nursing a concern", A("snfConcern"));
-  p("Household income", A("income")); p("Income consistent 2 yrs", A("incomeConsistent"));
-  p("Over $200k qualified", A("assets200k")); p("Retirement specialist", A("retirementSpecialist"));
-  p("Wants retirement appt", A("retirementReferral"));
-  if(av==="medicare"){
-    L.push(["— CURRENT MEDICARE PLAN —",""]);
-    p("Plan type", A("currentMedType")); p("Carrier", A("currentMedPlanCarrier"));
-    p("Plan name", A("currentMedPlanName")); p("Premium", A("currentMedPremium"));
-    p("Ancillary", A("currentAncillary")); p("Why shopping", A("switchReason"));
-    p("Window", A("enrollWindow")); p("Target effective date", A("effectiveDate"));
+  p("Premium", A("currentPremium"));
+  if(isT65()) p("Deductible", A("deductible"));
+  p("Max OOP", A("maxOOP"));
+  p("Hit max OOP", A("hitDeductible"));
+  if(isT65()){ p("Health history", A("healthHistory")); p("Prescriptions", A("prescriptions")); }
+  if(!isEmployerTrack()){
+    p("Dental today", A("dentalNow")); p("Dental important", A("dentalImport"));
+    p("CHS history", A("chsHistory")); p("CHS a concern", A("chsConcern"));
+    p("Skilled nursing history", A("snfHistory")); p("Skilled nursing a concern", A("snfConcern"));
   }
-  if(av==="employer"){
+  if(isT65()){
+    p("Household income", A("income")); p("Income consistent 2 yrs", A("incomeConsistent"));
+    p("Over $200k qualified", A("assets200k")); p("Retirement specialist", A("retirementSpecialist"));
+    p("Wants retirement appt", A("retirementReferral"));
+  }
+
+  if(isEmployerTrack()){
     L.push(["— RECOMMENDATION —",""]);
-    p("Track", "Delay Part A & B, CMS L564 at retirement");
-    p("Critical illness tier", A("chsChoice"));
+    p("Rec #1", A("ssStatus")==="yes"
+      ? "Delay Part B; auto-enrolled in Part A (drawing SS). CMS L564 with the Part B application."
+      : "Delay Part A and Part B entirely. CMS L564 with the A & B application.");
+    p("Clear on penalties / L564", A("empUnderstands"));
+    if(caBlocked()) p("Rec #2", "Not presented — CA ancillary block. Education only.");
+    else            p("Critical illness tier", A("chsChoice"));
   } else {
+    if(isOnMedicare()) p("Wanted the Supp vs MA rundown", A("wantsEducation"));
     L.push(["— UMBRELLA —",""]);
-    p("Supplement umbrella", money(umbrella("supp").value)+(umbrella("supp").overridden?" (override)":""));
-    p("Advantage umbrella",  money(umbrella("ma").value)+(umbrella("ma").overridden?" (override)":""));
+    if(caBlocked()) p("Umbrella", "Not pitched — CA ancillary block");
+    else {
+      p("Supplement umbrella", money(umbrella("supp").value)+(umbrella("supp").overridden?" (override)":""));
+      p("Advantage umbrella",  money(umbrella("ma").value)+(umbrella("ma").overridden?" (override)":""));
+    }
     L.push(["— PRICING —",""]);
     p("Plan G premium", A("planGPremium")); p("Part D", A("partDPremium")||"10");
     p("Supplement total", money(suppTotal()));
     p("MAPD premium", A("mapdPremium")||"0");
     p("Advantage total", money(maTotal()));
     p("Leaning toward", recommendedPlanLabel()||A("leaning"));
-    if(A("leaning")&&A("leaning")!=="unsure") p("Recommended", recommendedPlanLabel()+" at "+money(recommendedTotal())+"/mo all in");
+    if(A("leaning")&&A("leaning")!=="unsure")
+      p("Recommended", recommendedPlanLabel()+" at "+money(recommendedTotal())+"/mo"+(caBlocked()?"":" all in"));
+    p("Effective date", A("effectiveDate"));
   }
+
   L.push(["— CLOSE —",""]);
   p("Outcome", A("outcome")); p("Address", A("address"));
   p("Phone", A("phone")); p("Email", A("email")); p("Follow-up", A("followUp"));
   if(S.scratch) p("Agent notes", S.scratch);
-  const f = flags(); if(f.length) { L.push(["— FLAGS —",""]); f.forEach((x,i)=>p("Flag "+(i+1), x.replace(/<[^>]+>/g,""))); }
+  const f = flags(); if(f.length){ L.push(["— FLAGS —",""]); f.forEach((x,i)=>p("Flag "+(i+1), x.replace(/<[^>]+>/g,""))); }
   return L;
 }
 function summaryText(){
@@ -1384,8 +1648,9 @@ function render(){
   $("#secLabel").textContent = st.sec;
   $("#stepTitle").textContent = st.title;
   const sub = $("#stepSub");
-  sub.innerHTML = st.sub ? esc(st.sub) : "";
-  sub.style.display = st.sub ? "" : "none";
+  const subTxt = typeof st.sub==="function" ? st.sub() : st.sub;
+  sub.innerHTML = subTxt ? esc(subTxt) : "";
+  sub.style.display = subTxt ? "" : "none";
 
   $("#blocks").innerHTML = st.blocks.map(renderBlock).join("");
 
@@ -1418,13 +1683,12 @@ function renderStepsRail(cur){
   }).join("");
 }
 function renderRail(){
-  /* client snapshot */
   const av = avatar();
   const rows = [];
   const kv=(k,v,dim)=>rows.push('<div class="kv"><span class="k">'+esc(k)+'</span><span class="v'+(dim?" dim":"")+'">'+esc(v)+"</span></div>");
   kv("Client", A("clientName")||A("clientFirst")||"—", !(A("clientName")||A("clientFirst")));
   kv("Route", av?AVATARS[av].short:"undetermined", !av);
-  if(A("zip")) kv("Zip", A("zip"));
+  if(A("zip")) kv("Zip", A("zip")+(clientState()?" · "+clientState():""));
   if(age()!==null) kv("Age", String(age())+(monthsTo65()>0?" · 65 in "+monthsTo65()+"mo":""));
   if(A("ssStatus")) kv("Social Security", A("ssStatus")==="yes"?"Drawing":"Not yet");
   if(A("carrier")) kv("Carrier", A("carrier")+(A("planType")?" · "+A("planType"):""));
@@ -1435,11 +1699,14 @@ function renderRail(){
     (f.length ? f.map(x=>'<div class="flagrow"><span>⚠</span><span>'+x+"</span></div>").join("") : "") +
     rows.join("");
 
-  /* umbrella */
-  if(isEmployerTrack()){
+  const box = $("#railUmbrella");
+  if(caBlocked()){
+    box.innerHTML = '<div class="railstop">⛔ No ancillary on this call<div style="font-weight:500;margin-top:5px">'+
+      esc(clientState())+", age "+age()+". Medicare only.</div></div>";
+  } else if(isEmployerTrack()){
     const pick = A("chsChoice");
     const map = {gold:["Gold","$150"],silver:["Silver","$100"],bronze:["Bronze","$50"]};
-    $("#railUmbrella").innerHTML =
+    box.innerHTML =
       '<div class="empty" style="margin-bottom:8px">Employer track — Gold / Silver / Bronze instead of an umbrella.</div>'+
       (map[pick] ? '<div class="big">'+map[pick][1]+'<small> /mo · '+map[pick][0]+"</small></div>" : "");
   } else {
@@ -1448,19 +1715,18 @@ function renderRail(){
     if(A("chsConcern")==="yes") drivers.push("Cancer/HA/stroke");
     if(A("snfConcern")==="yes") drivers.push("Skilled nursing");
     if(A("dentalImport")==="yes") drivers.push("Dental (supp only)");
-    $("#railUmbrella").innerHTML =
+    box.innerHTML =
       '<div class="kv"><span class="k">Supplement</span><span class="v">'+money(s.value)+"/mo</span></div>"+
       '<div class="kv"><span class="k">Advantage</span><span class="v">'+money(m.value)+"/mo</span></div>"+
       (drivers.length
         ? '<div style="margin-top:8px;font-size:12.5px;color:var(--ink-3)">Driven by: '+esc(drivers.join(" · "))+"</div>"
-        : '<div class="empty" style="margin-top:8px">No concerns flagged yet in the CNA.</div>')+
+        : '<div class="empty" style="margin-top:8px">No concerns flagged yet.</div>')+
       (A("planGPremium")||A("mapdPremium")
         ? '<div class="kv" style="margin-top:8px"><span class="k">Supp all-in</span><span class="v">'+money(suppTotal())+
           '/mo</span></div><div class="kv"><span class="k">MA all-in</span><span class="v">'+money(maTotal())+"/mo</span></div>"
         : "");
   }
 
-  /* goals */
   $("#railGoals").innerHTML = S.goals.length
     ? S.goals.map((g,i)=>'<div class="railgoal"><span class="n">'+(i+1)+'.</span><span>'+esc(g)+"</span></div>").join("")
     : '<div class="empty">Captured in the opening.</div>';

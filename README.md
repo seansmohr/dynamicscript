@@ -17,31 +17,46 @@ To use it: download `index.html` and double-click it. Everything typed during a 
 saved to that browser, so a refresh or an accidental tab close doesn't lose the call.
 "New call" clears it.
 
-## The four avatars
+## Standing compliance rule
+
+**A client who is 65 or older in California cannot be pitched ancillary** — no umbrella,
+no Gold / Silver / Bronze. Medicare only. The zip code and date of birth decide it, and
+both are captured early on every track. When it fires, the tool removes the umbrella from
+the pricing, drops step 1 from the closes, and hides the Gold / Silver / Bronze pitch.
+There is no bypass; correcting a wrong zip or date of birth is the only way it clears.
+
+On the employer track there is no Medicare plan to offer in its place, so that call ends
+after the delay recommendation and the CMS L564 education.
+
+## The four tracks
 
 The route is decided automatically from the client's own answers, in this order:
 
-1. **Currently on Medicare** — already enrolled in Parts A & B
-2. **Employer coverage** — not on Medicare, on an employer group plan with **over 20 employees**
+1. **Currently on Medicare** — Parts A & B active. Exits right after the goals loop.
+2. **Employer coverage** — still working, **over 20 employees**. Exits at the work-status question.
 3. **T65 — on Social Security** — not on Medicare, drawing Social Security
 4. **T65 — not on Social Security** — everyone else
 
-An employer plan with **20 or fewer employees** makes Medicare the primary payer, so
-"delay Part A and B" is the wrong advice there. Those clients are routed onto the T65
-track and the agent sees a note explaining why. The agent can override the route on the
-CNA close screen if they disagree with it.
+An employer plan with **20 or fewer employees** means they must transition to Medicare, so
+those clients stay in the needs assessment and run the T65 track. The agent can override
+the route on the CNA close screen.
 
-### What each avatar changes
+### Each track has its own questions
 
-- **Employer coverage** exits the needs assessment early — no Part B income or retirement
-  asset questions — and goes to delay Part A & B → CMS L564 → Gold / Silver / Bronze.
-  These clients never see the Supplement / Advantage presentation or the umbrella.
-- **T65 on SS** gets the automatic-enrollment paragraph and "deducted from your check";
-  **T65 not on SS** gets the manual-enrollment paragraph and "billed for the first quarter."
-- **Currently on Medicare** gets a current plan review first (what they have, carrier, plan
-  letter, what they pay, why they're shopping, which enrollment window), then a short
-  "your foundation is already set" instead of an enrollment paragraph.
-- The 3 closing steps switch between Scenario A, B and C to match.
+Because two of the tracks exit before the shared needs assessment, they ask their own:
+
+- **Employer** — Social Security status, whether the plan is through the employer, carrier,
+  HMO/PPO, premium, max out of pocket, and whether they've hit it. Then delay Medicare →
+  CMS L564 → Gold / Silver / Bronze. No Supplement, Advantage or umbrella on this track.
+  Drawing Social Security changes the recommendation to "delay Part B only" and the L564
+  instructions to the Part B application alone.
+- **Already on Medicare** — zip, date of birth, carrier, HMO/PPO, premium, max out of
+  pocket, whether they've hit it, dental, cancer/heart/stroke and skilled nursing. Then
+  the client chooses whether they want the Supplement vs Advantage rundown at all, and the
+  call closes on the 3 step close.
+- **T65** — the full needs assessment, then the Medicare education. On SS gets the
+  automatic-enrollment paragraph and "deducted from your check"; not on SS gets the
+  manual-enrollment paragraph and "billed for the first quarter." Closes on Scenario A or B.
 
 ## Umbrella pricing
 
@@ -55,6 +70,7 @@ Three answers in the needs assessment price the umbrella. Nothing else touches i
 | **Maximum** | **$150** | **$150** |
 
 Dental only prices into the Supplement side, because an Advantage plan already bundles it.
+The California rule zeroes both umbrellas outright, and the override does not apply to it.
 
 The quoted price is then:
 
@@ -68,8 +84,6 @@ either umbrella on the pricing screen; "Reset to calculated" puts it back.
 ## Other things it does
 
 - Captures the opening goals loop and reads every goal back in the formal recommendation
-- Flags the compliance stops: no Scope of Appointment, and a client who doesn't make
-  their own healthcare decisions
-- Warns when a Supplement would be outside guaranteed issue, so underwriting gets set up
-  as an expectation before the presentation
+- Flags the compliance stops: the California ancillary rule, no Scope of Appointment, and
+  a client who doesn't make their own healthcare decisions
 - Builds a copy-paste call summary at the end, downloadable as a text file
