@@ -521,10 +521,55 @@ function birthMonthName(){
    no umbrella, no Gold / Silver / Bronze. California zips run 90001–96162,
    so the 900–961 prefix identifies the state on its own. Every other state
    is left blank because no other state changes what can be sold.          */
+/* ZIP prefix → state. Ranges rather than a 40,000-row table: the first three
+   digits of a US zip are allocated by state, so 3 digits is all it takes. */
+const ZIP_STATES = [
+  [  5,  5,"NY"],[  6,  7,"PR"],[  8,  8,"VI"],[  9,  9,"PR"],
+  [ 10, 27,"MA"],[ 28, 29,"RI"],[ 30, 38,"NH"],[ 39, 49,"ME"],[ 50, 59,"VT"],
+  [ 60, 69,"CT"],[ 70, 89,"NJ"],[ 90, 98,"AE"],
+  [100,149,"NY"],[150,196,"PA"],[197,199,"DE"],
+  [200,200,"DC"],[201,201,"VA"],[202,205,"DC"],[206,219,"MD"],
+  [220,246,"VA"],[247,268,"WV"],[270,289,"NC"],[290,299,"SC"],
+  [300,319,"GA"],[320,339,"FL"],[340,340,"AA"],[341,349,"FL"],
+  [350,369,"AL"],[370,385,"TN"],[386,397,"MS"],[398,399,"GA"],
+  [400,427,"KY"],[430,459,"OH"],[460,479,"IN"],[480,499,"MI"],
+  [500,528,"IA"],[530,549,"WI"],[550,567,"MN"],[570,577,"SD"],[580,588,"ND"],
+  [590,599,"MT"],[600,629,"IL"],[630,658,"MO"],[660,679,"KS"],[680,693,"NE"],
+  [700,714,"LA"],[716,729,"AR"],[730,732,"OK"],[733,733,"TX"],[734,749,"OK"],
+  [750,799,"TX"],[800,816,"CO"],[820,831,"WY"],[832,838,"ID"],[840,847,"UT"],
+  [850,865,"AZ"],[870,884,"NM"],[885,885,"TX"],[889,898,"NV"],
+  [900,961,"CA"],[962,966,"AP"],[967,968,"HI"],[969,969,"GU"],
+  [970,979,"OR"],[980,994,"WA"],[995,999,"AK"]
+];
+const STATE_NAMES = {
+  AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",
+  CT:"Connecticut",DE:"Delaware",DC:"District of Columbia",FL:"Florida",GA:"Georgia",
+  HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",KY:"Kentucky",
+  LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",
+  MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",
+  NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",
+  OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",
+  SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",
+  VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",
+  PR:"Puerto Rico",VI:"US Virgin Islands",GU:"Guam",
+  AA:"Armed Forces Americas",AE:"Armed Forces Europe",AP:"Armed Forces Pacific"
+};
 function stateFromZip(z){
-  const n = parseInt(String(z||"").replace(/\D/g,"").slice(0,3),10);
+  const digits = String(z||"").replace(/\D/g,"");
+  if(digits.length < 5) return "";          // only resolve a complete zip
+  const n = parseInt(digits.slice(0,3),10);
   if(!isFinite(n)) return "";
-  return (n>=900 && n<=961) ? "CA" : "";
+  for(const [lo,hi,code] of ZIP_STATES) if(n>=lo && n<=hi) return code;
+  return "";
+}
+const stateName = code => STATE_NAMES[code] || "";
+
+/* The state box follows the zip until an agent types into it themselves —
+   after that their entry wins, because they can see the client and we can't. */
+function syncStateToZip(){
+  if(A("stateEdited")==="1") return;
+  const detected = stateFromZip(A("zip"));
+  if(detected !== A("stateManual")) set("stateManual", detected);
 }
 function clientState(){
   const manual = String(A("stateManual")||"").trim().toUpperCase();
@@ -751,8 +796,11 @@ const STEPS = [
     {t:"do", text:"Wait for the response, then <b>repeat the zip code back to them.</b>"},
     {t:"fields", items:[
       {k:"zip", label:"Zip code", ph:"e.g. 64111", w:"sm"},
-      {k:"stateManual", label:"State", ph:()=>stateFromZip(A("zip"))||"auto", w:"sm",
-       hint:"Auto-detected from the zip. Only California changes what you can pitch."}
+      {k:"stateManual", label:"State", ph:"auto", w:"sm", hint:()=>{
+         const st = clientState();
+         if(!st) return "Fills in from the zip code.";
+         return (stateName(st)||st) + (A("stateEdited")==="1" ? " — entered by hand" : " — from the zip");
+       }}
     ]},
     {t:"cablock"},
     {t:"say", text:"Awesome, got that down."}
@@ -1133,8 +1181,11 @@ const STEPS = [
     {t:"do", text:"Wait for the response, then <b>repeat the zip code back to them.</b>"},
     {t:"fields", items:[
       {k:"zip", label:"Zip code", ph:"e.g. 64111", w:"sm"},
-      {k:"stateManual", label:"State", ph:()=>stateFromZip(A("zip"))||"auto", w:"sm",
-       hint:"Auto-detected from the zip. Only California changes what you can pitch."}
+      {k:"stateManual", label:"State", ph:"auto", w:"sm", hint:()=>{
+         const st = clientState();
+         if(!st) return "Fills in from the zip code.";
+         return (stateName(st)||st) + (A("stateEdited")==="1" ? " — entered by hand" : " — from the zip");
+       }}
     ]},
     {t:"cablock"},
     {t:"say", text:"Awesome, got that down."}
@@ -1496,12 +1547,13 @@ function fieldHTML(f){
       'value="'+esc(displayMDY(A(f.k)))+'" placeholder="mm/dd/yyyy">';
     return '<div class="f '+w+'"><label>'+esc(f.label)+"</label>"+inner+
            '<div class="hint'+(st.msg?" bad":"")+'" data-msgfor="'+f.k+'">'+
-             esc(st.msg || f.hint || "")+"</div></div>";
+             esc(st.msg || (typeof f.hint==="function" ? f.hint() : f.hint) || "")+"</div></div>";
   } else {
     inner = '<input data-k="'+f.k+'" type="'+type+'" value="'+v+'" placeholder="'+esc(f.ph||"")+'">';
   }
+  const hint = typeof f.hint==="function" ? f.hint() : f.hint;
   return '<div class="f '+w+'"><label>'+esc(f.label)+"</label>"+inner+
-         (f.hint?'<div class="hint">'+esc(f.hint)+"</div>":"")+"</div>";
+         (hint?'<div class="hint" data-hintfor="'+f.k+'">'+esc(hint)+"</div>":"")+"</div>";
 }
 function choiceHTML(c){
   const cur = A(c.k);
@@ -1788,6 +1840,14 @@ function render(){
   clampStep();
   const st = STEPS[S.step];
   TPL = [];
+  /* Replacing the step's markup destroys whatever the agent was focused on.
+     A blur fires change, which lands here — so clicking straight from one
+     field into the next would otherwise swallow the click. Remember where
+     focus is and put it back. */
+  const act = document.activeElement;
+  const keepK = act && act.dataset ? (act.dataset.k || null) : null;
+  const keepId = act && act.id ? act.id : null;
+  const keepPos = act && typeof act.selectionStart === "number" ? act.selectionStart : null;
 
   $("#secLabel").textContent = st.sec;
   $("#stepTitle").textContent = st.title;
@@ -1809,6 +1869,15 @@ function render(){
   renderStepsRail(st);
   renderRail();
   syncSaveBtn();
+
+  if(keepK || keepId){
+    const again = document.querySelector(
+      keepK ? '#blocks [data-k="'+keepK+'"]' : "#"+keepId);
+    if(again){
+      again.focus();
+      if(keepPos!=null){ try{ again.setSelectionRange(keepPos,keepPos); }catch(e){} }
+    }
+  }
 }
 function renderAvatarChip(){
   const av = avatar();
@@ -1833,6 +1902,7 @@ function renderRail(){
   kv("Client", A("clientName")||A("clientFirst")||"—", !(A("clientName")||A("clientFirst")));
   kv("Route", av?AVATARS[av].short:"undetermined", !av);
   if(A("zip")) kv("Zip", A("zip")+(clientState()?" · "+clientState():""));
+  if(dateStatus("dob").state==="ok") kv("DOB", displayMDY(A("dob")));
   if(age()!==null) kv("Age", String(age())+(monthsTo65()>0?" · 65 in "+monthsTo65()+"mo":""));
   if(A("ssStatus")) kv("Social Security", A("ssStatus")==="yes"?"Drawing":"Not yet");
   if(A("carrier")) kv("Carrier", A("carrier")+(A("planType")?" · "+A("planType"):""));
@@ -1952,14 +2022,59 @@ $("#blocks").addEventListener("input", e=>{
     }
     refill(); renderRail(); return;
   }
-  set(el.dataset.k, el.value); refill(); renderRail();
+  if(el.dataset.k==="stateManual" || el.dataset.k==="zip"){
+    const wasRestricted = caRestricted();
+    applyZipOrState(el);
+    repaintZipArea(el);
+    if(caRestricted() !== wasRestricted) render();   // render() puts focus back
+    return;
+  }
+  set(el.dataset.k, el.value);
+  refill(); renderRail();
 });
+
+/* Apply an edit to either half of the zip/state pair. */
+function applyZipOrState(el){
+  if(el.dataset.k==="stateManual"){
+    /* Typing here takes ownership; clearing it hands control back to the zip. */
+    set("stateManual", el.value.trim().toUpperCase());
+    set("stateEdited", el.value.trim() ? "1" : "");
+    if(!el.value.trim()) syncStateToZip();
+  } else {
+    set("zip", el.value);
+    syncStateToZip();
+  }
+}
+/* Update the state box and its hint in place — no redraw, so the agent keeps
+   their cursor and any click already in flight still lands. */
+function repaintZipArea(source){
+  const stateBox = document.querySelector('[data-k="stateManual"]');
+  if(stateBox && stateBox !== source) stateBox.value = A("stateManual");
+  const hint = document.querySelector('[data-hintfor="stateManual"]');
+  if(hint){
+    const st = clientState();
+    hint.textContent = !st ? "Fills in from the zip code."
+      : (stateName(st)||st) + (A("stateEdited")==="1" ? " — entered by hand" : " — from the zip");
+  }
+  refill(); renderRail();
+}
 $("#blocks").addEventListener("change", e=>{
   const el = e.target;
   if(!el.dataset.k) return;
   if(el.dataset.mdy!==undefined && dateStatus(el.dataset.k).state==="ok")
     el.value = displayMDY(el.value);
-  set(el.dataset.k, el.value); render();
+  const wasRestricted = caRestricted();
+  if(el.dataset.k==="stateManual" || el.dataset.k==="zip"){
+    applyZipOrState(el);
+    repaintZipArea(el);
+  } else {
+    set(el.dataset.k, el.value);
+    refill(); renderRail();
+  }
+  /* Redraw only when the step's shape can actually change: a select can switch
+     the whole route, and the California rule adds and removes blocks. Redrawing
+     on every blur would swallow the click that caused the blur. */
+  if(el.tagName==="SELECT" || caRestricted() !== wasRestricted) render();
 });
 $("#blocks").addEventListener("click", e=>{
   const opt = e.target.closest("[data-choice]");
