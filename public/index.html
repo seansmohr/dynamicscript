@@ -187,7 +187,18 @@ button,input,select,textarea{font:inherit;color:inherit}
 .goals .g .x{background:none;border:none;color:var(--ink-3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px}
 .goals .g .x:hover{color:var(--warn-line)}
 .addrow{display:flex;gap:8px}
-.addrow input{flex:1}
+/* The goal box is a real field like any other — it was inheriting the body's
+   text colour onto a browser-default white background, which made whatever
+   the agent typed invisible in dark mode. */
+.addrow input{
+  flex:1;min-width:0;background:var(--panel);color:var(--ink);
+  border:1.5px solid var(--line-2);border-radius:9px;padding:10px 12px;
+  font-size:15.5px;outline:none;transition:border-color .12s,box-shadow .12s
+}
+.addrow input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+/* Placeholders read as hint text in both themes rather than whatever the
+   browser picks. */
+input::placeholder,textarea::placeholder{color:var(--ink-3);opacity:1}
 .btn{
   background:var(--brand);color:var(--brand-ink);border:none;border-radius:9px;padding:10px 18px;
   font-size:15px;font-weight:700;cursor:pointer
