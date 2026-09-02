@@ -66,9 +66,14 @@ cover or skilled nursing cover.** Since neither can be sold, the tool does not e
 exposure: the major-exposures set-up, the CHS conversation and the skilled nursing
 conversation are skipped entirely on both tracks that carry them.
 
-**Dental can still be sold.** The dental question is still asked as normal and still prices
-$50 into the Medicare Supplement umbrella. That leaves the Advantage umbrella at $0, since
-an Advantage plan already bundles dental.
+**On the T65 track, dental can still be sold.** The dental question is still asked as normal
+and still prices $50 into the Medicare Supplement umbrella. That leaves the Advantage
+umbrella at $0, since an Advantage plan already bundles dental.
+
+On the already-on-Medicare track the product is Gold / Silver / Bronze, so a restricted
+client gets the California variant close instead: on the Advantage side the October review
+appointment is the deliverable, and on the Supplement side the supplement move itself is
+the sale.
 
 Gold / Silver / Bronze *is* cancer, heart attack and stroke cover, so it cannot be sold
 either. On the employer track there is no Medicare plan to offer in its place, so that call
@@ -99,10 +104,19 @@ Because two of the tracks exit before the shared needs assessment, they ask thei
   CMS L564 → Gold / Silver / Bronze. No Supplement, Advantage or umbrella on this track.
   Drawing Social Security changes the recommendation to "delay Part B only" and the L564
   instructions to the Part B application alone.
-- **Already on Medicare** — zip, date of birth, carrier, HMO/PPO, premium, max out of
-  pocket, whether they've hit it, dental, cancer/heart/stroke and skilled nursing. Then
-  the client chooses whether they want the Supplement vs Advantage rundown at all, and the
-  call closes on the 3 step close.
+- **Already on Medicare** — zip, date of birth and carrier, then a second branch point:
+  *"is that a Medicare Advantage or Medicare Supplement plan?"* Each side is self-contained
+  and does not run the Supplement vs Advantage education or the pricing comparison.
+  - **4A Advantage** — HMO/PPO, premium, max out of pocket, the cancer/heart/stroke
+    exposure, then a timing check. Anything changed recently, or mail about the plan
+    changing, or today falling inside Oct 15 – Dec 7, routes them to the in-AEP close;
+    otherwise they are locked until October. Outside AEP closes in two steps (umbrella
+    today, October review booked live); in AEP it closes in three (umbrella, full review
+    inside 48 hours, effective date).
+  - **4B Supplement** — premium, then the federal standardization pitch: a Plan G is a
+    Plan G by law, so the only difference is price. The agent types the carrier and price
+    they would move them to and the tool works out the monthly and annual saving. Closes in
+    three steps, with the emphasis that nothing gets cancelled until the new plan is active.
 - **T65** — the full needs assessment, then the Medicare education. On SS gets the
   automatic-enrollment paragraph and "deducted from your check"; not on SS gets the
   manual-enrollment paragraph and "billed for the first quarter." Closes on Scenario A or B.
@@ -110,6 +124,9 @@ Because two of the tracks exit before the shared needs assessment, they ask thei
 ## Umbrella pricing
 
 Three answers in the needs assessment price the umbrella. Nothing else touches it.
+
+This applies to the **T65 track only**. Employer-coverage clients and clients already on
+Medicare are sold Gold / Silver / Bronze ($150 / $100 / $50) instead.
 
 | CNA answer | Medicare Supplement | Medicare Advantage |
 |---|---|---|

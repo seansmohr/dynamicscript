@@ -86,14 +86,17 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
         → Scenario A (not on SS) / Scenario B (on SS)
         → underwriting urgency → address → objections + pre-emptive close
 
-* umbrella drivers    † skipped entirely when the client is 65+ in California</div>
+* umbrella drivers (T65 track)    † skipped entirely when the client is 65+ in California
+Gold / Silver / Bronze is the product on the employer track and on both already-on-Medicare
+branches. The $50/$100/$150 umbrella built from the needs assessment is T65 only.</div>
 
 <table>
 <tr><th>Track</th><th>How you land on it</th><th>Its own questions</th><th>Close</th></tr>
 <tr><td><b>Employer coverage</b></td><td>Not on Medicare · still working · <b>over 20 employees</b>. Exits at the work-status question.</td>
     <td>SS · carrier · HMO/PPO · premium · max OOP · hit it</td><td>Gold / Silver / Bronze, then address</td></tr>
-<tr><td><b>Already on Medicare</b></td><td>Parts A &amp; B active. Exits right after the goals loop, before the CNA.</td>
-    <td>zip · DOB · carrier · HMO/PPO · premium · max OOP · hit it · dental · CHS · skilled nursing</td><td>3 step close</td></tr>
+<tr><td><b>Already on Medicare</b></td><td>Parts A &amp; B active. Exits right after the goals loop, then splits again by what they hold.</td>
+    <td><b>4A Advantage:</b> HMO/PPO · premium · max OOP · CHS · SEP check<br><b>4B Supplement:</b> premium only, then the standardization pitch</td>
+    <td>4A: 2 or 3 steps by timing<br>4B: 3 steps</td></tr>
 <tr><td><b>T65 — not on SS</b></td><td>Not on Medicare, not drawing Social Security</td>
     <td>The full needs assessment in section 2</td><td>Scenario A</td></tr>
 <tr><td><b>T65 — on SS</b></td><td>Not on Medicare, drawing Social Security</td>
@@ -101,7 +104,8 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
 </table>
 <div class="do">An employer plan with <b>20 or fewer employees</b> makes Medicare the primary payer — the script says outright that those clients <b>must transition to Medicare</b>, so they stay in the needs assessment and run the T65 track.</div>
 
-<h2>Umbrella pricing — driven by three CNA answers</h2>
+<h2>Umbrella pricing — T65 track only</h2>
+<div class="do">Clients already on Medicare and clients on employer coverage are sold <b>Gold / Silver / Bronze</b> instead. This table does not apply to them.</div>
 <table>
 <tr><th>What they told you in the CNA</th><th class="n">Medicare Supplement</th><th class="n">Medicare Advantage</th></tr>
 <tr><td>Cancer / heart attack / stroke is a concern</td><td class="n">+$50</td><td class="n">+$50</td></tr>
@@ -301,60 +305,172 @@ ul{margin:0 0 10px;padding-left:22px} li{margin:3px 0}
 
 <div class="page"></div>
 <h2>4 · Education (Already on Medicare)</h2>
-<div class="do">Parts A &amp; B are already active. This section has <b>its own questions</b> — the client left the opening right after the goals loop. No health history, no prescriptions, no Part B income, no retirement assets, and no Original Medicare walkthrough on this track.</div>
+<div class="do">Parts A &amp; B are already active. This section is <b>self-contained</b> — it has its own questions and its own closes, and it does not run sections 5 to 8. Those are for T65 clients only.</div>
 
-<h3>Zip code and date of birth</h3>
+<h3>4.0 Shared opening — run this before you branch</h3>
 <div class="say">"So for starters, what's your zip code?"</div>
 <div class="do">Repeat the zip code back. → "Awesome, got that down."</div>
 <div class="say">"Now what is your date of birth?" → "Perfect, got that here."</div>
 <div class="write">Zip: &nbsp;&nbsp; State: &nbsp;&nbsp; DOB (mm/dd/yyyy): &nbsp;&nbsp; Age:</div>
-<div class="do">California and 65 or older? The umbrella comes off this call entirely — see the standing rule on page 1.</div>
+<div class="say">"Tell me a little bit about your current health insurance — what carrier is that with?"</div>
 
-<h3>Carrier and plan</h3>
-<div class="say">"Tell me a little bit about your current health insurance — what carrier is that with?" &nbsp;·&nbsp; "And is that an HMO… PPO?"</div>
-<div class="write">Carrier: &nbsp;&nbsp; HMO / PPO:</div>
+<h3 style="margin-top:14px">Branch point <span class="pill">decides the whole call</span></h3>
+<div class="say">"And is that a <b>Medicare Advantage</b> or <b>Medicare Supplement</b> plan?"</div>
+<div class="branch alt"><span class="tag">Medicare Advantage</span><p>→ <b>Branch 4A</b></p></div>
+<div class="branch alt"><span class="tag">Medicare Supplement</span><p>→ <b>Branch 4B</b></p></div>
+<div class="branch"><span class="tag">They don't know</span>
+<div class="say" style="margin:0 0 6px">"Does your card say the carrier's name at the top with copays listed on it, or does it say Medicare Supplement Plan G or Plan N?"</div>
+<p>Copays for doctor visits → <b>Advantage</b>. A plan letter on the card → <b>Supplement</b>.</p></div>
 
-<h3>Monthly premium and max out of pocket</h3>
+<div class="branch warn"><span class="tag">California check — do this now</span>
+<p>Off the zip code and date of birth you just took. California <b>and</b> 65 or older means no ancillary: no umbrella, no Gold / Silver / Bronze. Use the California variant close inside whichever branch you land in. Everything else in the branch runs the same.</p>
+<p><b>The exposure conversation is skipped too</b> — there is no critical illness product to sell here, so it is not embedded.</p></div>
+
+<div class="page"></div>
+<h2>Branch 4A — Medicare Advantage</h2>
+
+<h3>4A.1 CNA continuation</h3>
+<div class="say">"And is that an HMO or a PPO?"</div>
 <div class="say">"What are you paying for that right now on a month to month basis?"</div>
 <div class="say">"And then you may not know this next part off the top of your head, but if you have your insurance card it should read off of there. What is your maximum out of pocket?"</div>
 <div class="say">"Have you hit that max out of pocket, and if so what happened?"</div>
-<div class="write">Premium: $ &nbsp;&nbsp; Max OOP: $</div>
+<div class="write">HMO / PPO: &nbsp;&nbsp; Premium: $ &nbsp;&nbsp; Max OOP: $</div>
 
-<h3>Dental <span class="pill">umbrella driver</span> <span class="pill">still asked in CA at 65+</span></h3>
-<div class="say">"And are you carrying any dental insurance right now?"</div>
-<div class="say">"Is that coverage important to you?"</div>
-<div class="branch"><span class="tag">If important</span><p><b>+$50 to the Medicare Supplement umbrella.</b> No effect on the Advantage umbrella — an Advantage plan already bundles dental.</p></div>
-
-<h3>Major exposures — the set-up <span class="pill">skipped in CA at 65+</span></h3>
-<div class="say">"Gotcha. Now, in that webinar do you remember how we highlight major exposures?"</div>
-<div class="say">"Major exposures can really stem from any plan — whether it's your current plan with [carrier], or any other Medicare plan — but really in relation to two specific things."</div>
-
-<h3>Cancer, heart attack, stroke <span class="pill">umbrella driver</span> <span class="pill">skipped in CA at 65+</span></h3>
-<div class="say">"For starters — cancer, heart attack, stroke. Do we have any personal or family history with the big three?"</div>
-<div class="say">"I really appreciate you sharing that with me… and the reason we bring this up — I'll share a personal note. My grandmother had cancer three times, and she was on Medicare and had great coverage, but even with that coverage she had to pay <b>$15,000</b> out of her own pocket for non-approved expenses. <b>Is something like that going to be a concern for you?</b>"</div>
-<div class="do"><b>Get their commitment.</b> Not a shrug — a yes.</div>
-<div class="branch"><span class="tag">If yes</span><p><b>+$50 to both umbrellas.</b></p></div>
-
-<h3>Skilled nursing <span class="pill">umbrella driver</span> <span class="pill">skipped in CA at 65+</span></h3>
-<div class="say">"Now the next big exposure we see is skilled nursing. Do you have any personal or family history with that, and are you familiar with how that coverage functions with Medicare?"</div>
-<div class="say">"Medicare will help cover up to day 100 as long as you had a <b>3 day hospital stay</b> and are <b>showing signs of improvement</b>… but after day 100 you are responsible for all costs. And it's really important we focus on that 3 day hospital stay and showing signs of improvement."</div>
-<div class="say">"I had a client who was in skilled nursing for ten days and her insurance plan, Kaiser, said she was not improving and doing the exercises because she had a stroke — so they ended her care and she had to go home and pay <b>$20,000</b> out of pocket for home care. So I'm assuming this will be a concern as well?"</div>
+<h4>Major exposures — cancer, heart attack, stroke <span class="pill">skipped in CA at 65+</span></h4>
+<div class="say">"Gotcha, now in that webinar do you remember how we highlight major exposures? Major exposures can really stem from any plan — whether it's your current plan with [carrier], or any other Medicare plan — but really in relation to <b>three specific things</b>."</div>
+<div class="say">"Which are cancer, heart attack, stroke. Do we have any personal or family history with the big three?"</div>
+<div class="say">"I really appreciate you sharing that with me… and the reason we bring this up — I'll share a personal note. My grandmother had cancer three times, and she was on Medicare and had great coverage, but even with that coverage she had to pay <b>$10,000</b> out of her own pocket for non-approved expenses. Is something like that going to be a concern for you?"</div>
 <div class="do"><b>Get their commitment.</b></div>
-<div class="branch"><span class="tag">If yes</span><p><b>+$50 to the Supplement umbrella · +$100 to the Advantage umbrella.</b></p></div>
-<div class="say">"And yeah, we'll come back to that in greater detail, but I really just wanted to make sure you're aware of these exposures."</div>
+<div class="say">"And yeah, we'll come back to that in greater detail, but I really just wanted to make sure you're aware of that exposure."</div>
 
-<h3>Do they want the rundown? <span class="pill">branch point</span></h3>
-<div class="say">"Now I have pretty much everything I need, and before we dive into pricing I always prefer to do a quick rundown of the difference between Medicare Advantage and Supplement — would you like that?"</div>
-<div class="branch alt"><span class="tag">Yes</span><p>Run the Supplement and Advantage education (sections 5 and 6), then pricing.</p></div>
-<div class="branch alt"><span class="tag">No</span><p>Skip both. Go straight to pricing.</p></div>
+<h3>4A.2 SEP check <span class="pill">branch point</span></h3>
+<div class="say">"Before I make any recommendations, quick timing question. Has anything changed recently? Did you move, lose other coverage, or start getting any help paying for prescriptions?"</div>
+<div class="say">"And has [carrier] mailed you anything about your plan changing?"</div>
+<table>
+<tr><th>Answers</th><th>Route</th></tr>
+<tr><td>All no, <b>and</b> today is outside Oct 15 – Dec 7</td><td><b>Outside AEP</b></td></tr>
+<tr><td>Any yes, <b>or</b> today is inside Oct 15 – Dec 7</td><td><b>In AEP / SEP</b></td></tr>
+</table>
+<div class="say">If they said yes: "That may open a window for you. Let me verify it before I promise anything."</div>
+<div class="stop">Never tell them they have a special enrollment period until you have confirmed it.</div>
 
-<h3>Close for this track</h3>
-<div class="branch"><span class="tag">3 step close — already on Medicare</span>
+<h3>4A.3 Timing frame — pick one</h3>
+<div class="branch"><span class="tag">Outside AEP</span>
+<div class="say" style="margin:0 0 6px">"So here's where we're at. You're locked into [carrier] until October 15th. I can't change your medical plan today, and I'm not going to pretend otherwise."</div>
+<div class="say" style="margin:0">"What I can do is show you where this plan leaves you exposed, and show you how we can get rid of that exposure. Sound fair?"</div></div>
+<div class="branch"><span class="tag">In AEP / verified SEP</span>
+<div class="say" style="margin:0">"Good timing. We're in the window where I can actually change your plan. We'll do it in the right order — exposure first, then the plan itself. Sound fair?"</div></div>
+
+<h3>4A.4 Exposure</h3>
+<div class="say">"Grab your insurance card for me. I want the exact plan name off the front — [carrier] has a few plans in your area and I want to be sure I'm looking at yours."</div>
+<div class="stop">Pull up the Summary of Benefits for that exact plan and zip, so you are quoting their real max out of pocket.</div>
+<div class="write">Exact plan name:</div>
+<h4>Step 1 — reiterate the exposure</h4>
+<div class="say">"So right now, your plan with [carrier] has a max out of pocket of <b>$[X]</b>."</div>
+<h4>Step 2 — explain the risk</h4>
+<div class="say">"What that means is, god forbid you have a bad health year, it's very likely you will pay <b>$[X]</b> for your healthcare plus potentially pay for non-approved Medicare expenses. And right now, looking at your current plan, your biggest exposure is to <b>critical illnesses</b>. Your plan has you paying <b>[X]%</b> of all costs, god forbid you get diagnosed with a critical illness."</div>
+<h4>Step 3 — present CHS</h4>
+<div class="say">"That's where our Gold, Silver and Bronze options come in. They're designed to cover those big out of pocket risks while you stay on your plan with [carrier] — and if you decide to transition to a new plan later on."</div>
+<div class="branch warn"><span class="tag">California, 65 or older</span><p>Skip 4A.5 and go to <b>4A.7</b>.</p></div>
+
+<h3>4A.5 Present Gold / Silver / Bronze</h3>
+<div class="say">"Now [first name], I want you to write down Gold, Silver and Bronze, and let me know once you've got that down."</div>
+<div class="do">Wait for confirmation before <b>each</b> tier.</div>
+<table>
+<tr><th>Tier</th><th>Cancer</th><th>Heart attack &amp; stroke</th><th class="n">Total benefit</th><th class="n">Monthly</th></tr>
+<tr><td><b>Gold</b></td><td>$30,000</td><td>$30,000</td><td class="n">$60,000</td><td class="n">$150</td></tr>
+<tr><td><b>Silver</b></td><td>$20,000</td><td>$20,000</td><td class="n">$40,000</td><td class="n">$100</td></tr>
+<tr><td><b>Bronze</b></td><td>$10,000</td><td>$10,000</td><td class="n">$20,000</td><td class="n">$50</td></tr>
+</table>
+<div class="say">"Awesome, so based on these prices, which option do you feel like you can comfortably afford on top of your current coverage?"</div>
+
+<h3>4A.6 The close — pick one</h3>
+<div class="branch"><span class="tag">2 step close — outside AEP</span>
+<div class="say" style="margin:0 0 6px">"Based on everything you told me today, [read back your notes], my recommendation is the [Gold/Silver/Bronze] umbrella at <b>$[X]</b> a month, and a full review of your [carrier] plan in October."</div>
+<div class="do" style="margin:0 0 6px">PAUSE … the first one to talk loses. Then: "Still have that paper? Write this down. Two steps."</div>
+<ol><li>We get your umbrella coverage set up for <b>$[X]</b> a month, today.</li>
+<li>We put a date on the calendar in October to review your [carrier] plan for next year.</li></ol>
+<div class="say" style="margin:6px 0 0">"Step 1 is the only thing we knock out today. The reason we handle this now instead of waiting until October is because we need to make sure we can get you approved through underwriting… and once you're approved, this locks in your rate based on your age right now."</div>
+<div class="stop" style="margin:8px 0 0">Book the October appointment on the calendar before the call ends. "Call me in October" is not an appointment.</div></div>
+
+<div class="branch"><span class="tag">3 step close — in AEP or verified SEP</span>
+<div class="say" style="margin:0 0 6px">"Based on everything you told me today, [read back your notes], my recommendation is the [Gold/Silver/Bronze] umbrella at <b>$[X]</b> a month, plus a full review of your [carrier] plan in the next 48 hours."</div>
 <ol><li>We get your umbrella coverage set up for <b>$[X]</b> a month.</li>
-<li>We review your current plan and lock in your new <b>[Supplement / Advantage]</b> plan.</li>
-<li>Your new coverage kicks in on <b>[effective date]</b>.</li></ol>
-<p class="fine" style="font:italic 9.5pt Helvetica,Arial,sans-serif;color:#7d879f;margin:6px 0 0">California and 65 or older: step 1 is the dental umbrella if dental matters to them, and is removed altogether if it does not.</p></div>
-<div class="do">Then the underwriting urgency and the address question — same wording as the T65 track on the last page.</div>
+<li>We get back together within 48 hours and do a full review of your [carrier] plan.</li>
+<li>Your new coverage goes into effect on <b>[effective date]</b>.</li></ol>
+<div class="say" style="margin:6px 0 0">"Step 2 is its own appointment because I have to run your doctors and your medications against every plan in your zip code, and that takes a good amount of time. So we'll get that booked within 48 hours of today… okay?"</div>
+<div class="stop" style="margin:8px 0 0">Book the follow-up live, inside 48 hours. Get the full doctor list, prescriptions with dosages, and preferred pharmacy before you hang up, or you have nothing to run.</div></div>
+<div class="say">"I'll handle the entire enrollment process for you… and what's a good address to send policy packets and information to?"</div>
+<div class="do">Handle objections and <b>always end with a pre-emptive close.</b></div>
+
+<h3>4A.7 California variant — 65 or older, no ancillary</h3>
+<div class="do">Run 4A.1 through 4A.4 <b>without the exposure conversation</b> — there is no critical illness product to sell, so it is not embedded. Do not present Gold, Silver or Bronze.</div>
+<div class="branch"><span class="tag">Outside AEP</span>
+<div class="say" style="margin:0 0 6px">"So here's my honest recommendation. Your plan is locked until October 15th, so there's nothing for you to buy today and I'm not going to invent something. What I want is a spot on the calendar in October."</div>
+<div class="say" style="margin:0 0 6px">"In September [carrier] mails you a book called the <b>Annual Notice of Change</b>. It tells you what's changing about your copays and your drug list for next year. Almost nobody reads it. I read it for you, and I compare your plan against everything else in your zip code."</div>
+<ol><li>We get your review scheduled for the week of <b>[October date]</b>.</li>
+<li>Any changes we make go into effect January 1st.</li></ol>
+<div class="say" style="margin:6px 0 0">"Before we hang up, let me confirm your doctors, your prescriptions, and a good street address so I'm ready to go in October."</div>
+<div class="stop" style="margin:8px 0 0">Book the appointment live. Confirm doctors, prescriptions and pharmacy in the CRM — that is the deliverable on this call.</div></div>
+<div class="branch"><span class="tag">In AEP</span>
+<div class="say" style="margin:0">"Good timing. We're in the window where I can actually make a change for you, so let's go ahead and review your plan."</div>
+<p>Go directly into plan comparison and enrollment.</p></div>
+
+<div class="page"></div>
+<h2>Branch 4B — Medicare Supplement</h2>
+
+<h3>4B.1 CNA continuation</h3>
+<div class="say">"What are you paying for that right now on a month to month basis?"</div>
+<div class="write">Premium: $ &nbsp;&nbsp; Plan letter:</div>
+
+<h3>4B.2 Education — federal standardization</h3>
+<div class="say">"And [name], are you familiar with Medicare Supplements being federally regulated?"</div>
+<div class="say">"So Medicare Supplements are federally regulated. That means a Plan G with [their carrier] and a Plan G with any other company in the country cover the <b>exact same things</b>, because the government requires them to. So no matter which insurance carrier you go with, your coverage will be the same."</div>
+<div class="say">"Does that make sense so far?"</div>
+<div class="say">"So if the coverage is identical by law, then the only thing that's actually different between one company and the next is <b>the price</b>, and how often that company raises rates on their people. That's it."</div>
+<div class="say">"Which means when I go shop this for you, I'm not asking you to give up a single thing. Same coverage, same doctors, same benefits — different price. And looking at it right now, we could get you the same coverage with <b>[appointed company]</b> for <b>[price]</b> per month. How does that sound?"</div>
+<div class="write">Quoted carrier: &nbsp;&nbsp; Their price: $ &nbsp;&nbsp; Monthly saving: $</div>
+<h4>Underwriting — framed honestly, framed to move</h4>
+<div class="say">"Now here's the one catch. Because you're past your original open enrollment window, moving to a lower priced plan goes through <b>underwriting</b>, which is just a handful of health questions."</div>
+<div class="say">"So here's what I always recommend — we put the application in and we see what happens. If you're approved, you're paying less every single month for the exact same coverage, and we cancel the old policy. If you're not approved, absolutely nothing happens. Your coverage with [carrier] stays exactly where it is."</div>
+<div class="say">"There's <b>no version of this where you end up worse off</b>. The only thing you lose by not applying is the money you're overpaying. Fair enough?"</div>
+<div class="branch warn"><span class="tag">California, 65 or older</span><p>Skip 4B.3 and go to <b>4B.5</b>.</p></div>
+
+<h3>4B.3 Umbrella pitch</h3>
+<div class="say">"Now that's the medical side. Something I do want you to know before we continue is that even with a supplement you are exposed to <b>non-approved Medicare expenses</b>… are you familiar with that?"</div>
+<div class="say">"Your supplement is the best medical coverage on the market, I'll say that all day. If Medicare approves it, your plan pays it. But god forbid you have a bad health year, and have to deal with some critical illnesses or recover in a facility or the comfort of your own home — that is where the non-approved expenses start to creep in. Is that going to be a concern for you?"</div>
+<table>
+<tr><th>Non-approved expense</th><th class="n">Cost</th></tr>
+<tr><td>Custodial care in a nursing home</td><td class="n">$6,000 / month</td></tr>
+<tr><td>Medical professional for recovering at home</td><td class="n">$5,000 / month</td></tr>
+<tr><td>Eliquis — after a stroke</td><td class="n">$500 / month</td></tr>
+<tr><td>Keytruda — cancer</td><td class="n">$10,000 / dose</td></tr>
+<tr><td>Opdivo — cancer</td><td class="n">$10,000 / dose</td></tr>
+</table>
+<div class="say">"So the supplement handles the medical bills, and then what we call <b>umbrella coverage</b> covers those non-approved expenses."</div>
+<div class="do">Then the Gold / Silver / Bronze write-down, exactly as in 4A.5, closing on: "…which option do you feel like you can comfortably afford on top of your current supplement plan, because we don't know if we can get you approved for that new supplement price just yet?"</div>
+
+<h3>4B.4 Three step close</h3>
+<div class="say">"Based on everything you shared today, [read back your notes], my formal recommendation is the [Gold/Silver/Bronze] umbrella at <b>$[X]</b> a month, and submitting the Medicare Supplement application with <b>[new carrier]</b> to qualify you for that lower price."</div>
+<div class="do">PAUSE … the first one to talk loses.</div>
+<div class="branch"><span class="tag">Three steps</span>
+<ol><li>We get your umbrella coverage set up for <b>$[X]</b> a month.</li>
+<li>We put in the Medicare Supplement application with <b>[new carrier]</b> to see if you qualify.</li>
+<li>Your new coverage goes into effect on <b>[effective date]</b> — and that's the day we cancel the old policy, if you are approved for the new one.</li></ol></div>
+<div class="say">"Step 1 and 2 we can knock out today. The reason we handle both today is because they go through underwriting, and I want to know where you stand."</div>
+<div class="stop">"You do not cancel anything today. You do not cancel anything until the new plan is approved and active."</div>
+<div class="say">"I'll handle the entire enrollment process for you… and what's a good address to send policy packets and information to?"</div>
+
+<h3>4B.5 California variant — 65 or older, no ancillary</h3>
+<div class="do">Run 4B.1 and 4B.2 exactly as written. Do not present Gold, Silver or Bronze. <b>The supplement itself is the sale here.</b></div>
+<div class="say">"So [first name], based on what you're paying now and what I'm seeing on my end, my recommendation is straightforward. Two steps, write them down."</div>
+<div class="branch"><span class="tag">Two steps</span>
+<ol><li>We put in the application today to see if we can get you the exact same coverage for less than you're paying [carrier].</li>
+<li>Your new coverage goes into effect on <b>[effective date]</b> — and that's the day, and only that day, we cancel the old policy.</li></ol></div>
+<div class="say">"The reason we do this today instead of thinking about it is that this goes through underwriting, and <b>underwriting only gets harder as time goes on</b>. Your health today is the best it's going to be for this application. Every month you wait is a month you're overpaying, and a month of health history that can get in the way."</div>
+<div class="stop">"And to be very clear, you do not cancel anything today. Not until the new plan is approved and active. You are never without coverage for a single day."</div>
+<div class="say">"Now let me get everything pulled up for us. And what was going to be a good street address for you so I make sure you receive your packages and cards?"</div>
+<div class="do">Handle objections and <b>always end with a pre-emptive close.</b></div>
 
 <div class="page"></div>
 <h2>5 · Medicare Education — T65 only</h2>
