@@ -1271,15 +1271,6 @@ const STEPS = [
     ]}
   ]},
 
-{ id:"m4a-moop", sec:"CNA", title:"Advantage — max out of pocket",
-  skip:()=> !isOnMedicare() || !onMA(),
-  blocks:[
-    {t:"say", text:"And then you may not know this next part off the top of your head, but if you have your insurance card it should read off of there. What is your maximum out of pocket?"},
-    {t:"field", k:"maxOOP", label:"Max out of pocket", ph:"$", w:"sm"},
-    {t:"say", text:"Have you hit that max out of pocket, and if so what happened?"},
-    {t:"field", k:"hitDeductible", label:"What happened", type:"textarea", ph:"Their story.", w:"lg"}
-  ]},
-
 { id:"m4a-exposures", sec:"CNA", title:"Advantage — cancer, heart attack, stroke",
   sub:"Skipped when the California restriction applies — there is no critical illness product to sell.",
   skip:()=> !isOnMedicare() || !onMA() || caRestricted(),
@@ -1302,7 +1293,7 @@ const STEPS = [
   sub:"Decides which close you land on. Never promise a special enrollment period before it is verified.",
   skip:()=> !isOnMedicare() || !onMA(),
   blocks:[
-    {t:"say", text:"Before I make any recommendations, quick timing question. Has anything changed recently? Did you move, lose other coverage, or start getting any help paying for prescriptions?"},
+    {t:"say", text:"Now before I make any recommendations, quick timing question. Has anything changed recently? Did you move, lose other coverage, or start getting any help paying for prescriptions?"},
     {t:"choice", k:"sepChanges", label:"Anything changed?", opts:[
       {v:"yes",l:"Yes — something changed"},{v:"no",l:"No"}
     ]},
@@ -1335,18 +1326,26 @@ const STEPS = [
   blocks:[
     {t:"say", text:"Grab your insurance card for me. I want the exact plan name off the front — {carrier} has a few plans in your area and I want to be sure I'm looking at yours."},
     {t:"field", k:"planNameExact", label:"Exact plan name from the card", ph:"As printed on the front of the card", w:"lg"},
-    {t:"warn", text:"<b>Pull up the Summary of Benefits</b> for that exact plan and zip, so you are quoting their real max out of pocket and not a guess."},
+    {t:"warn", text:"<b>Pull up the Summary of Benefits</b> for that exact plan and zip — you need their <b>critical illness coinsurance percentage</b>, and the next line does not land without a real number."},
     {t:"do", text:"Get their commitment before you move on."}
   ]},
 
-{ id:"m4a-exposure", sec:"Education", title:"Advantage — reiterate the exposure",
+{ id:"m4a-exposure", sec:"Education", title:"Advantage — where the plan leaves them exposed",
+  sub:"The coinsurance percentage is the only number in this section. Read it off the Summary of Benefits.",
   skip:()=> !isOnMedicare() || !onMA() || caRestricted(),
   blocks:[
-    {t:"info", text:"<b>Step 1</b> — reiterate the max out of pocket &nbsp;·&nbsp; <b>Step 2</b> — explain the risk &nbsp;·&nbsp; <b>Step 3</b> — set up Gold / Silver / Bronze."},
-    {t:"say", text:"So right now, your plan with {carrier} has a max out of pocket of {moop}."},
+    {t:"info", text:"<b>Step 1</b> — explain the risk &nbsp;·&nbsp; <b>Step 2</b> — address the concern &nbsp;·&nbsp; <b>Step 3</b> — present Gold / Silver / Bronze."},
     {t:"field", k:"criticalPct", label:"Their critical illness coinsurance", ph:"e.g. 20", w:"sm",
-      hint:"From the Summary of Benefits — the % of costs they carry on a critical illness."},
-    {t:"say", text:"What that means is, god forbid you have a bad health year, it's very likely you will pay {moop} for your healthcare <b>plus</b> potentially pay for non-approved Medicare expenses. And right now, looking at your current plan, your biggest exposure is to <b>critical illnesses</b>. Your plan has you paying <b>{critPct}</b> of all costs, god forbid you get diagnosed with a critical illness."},
+      hint:"Straight off the Summary of Benefits — the % of treatment costs they carry."},
+    {t:"do", if:()=>!A("criticalPct"),
+      text:"You don't have the percentage yet. Get it off the Summary of Benefits before you read the next line — this is the whole exposure."},
+    {t:"say", text:"So I found your current plan with {carrier} and I am looking through the summary of benefits, which is just the list of items that your plan covers. I can see here that your biggest exposure is to <b>critical illnesses</b>. Your plan has you paying <b>{critPct}</b> of all treatment costs, god forbid you get diagnosed with a critical illness. <span class='q'>Were you aware of that?</span>"},
+    {t:"do", text:"Wait for the response."},
+    {t:"say", text:"<span class='q'>And is that going to be a concern for you?</span>"},
+    {t:"do", text:"<b>Get their commitment.</b>"},
+    {t:"choice", k:"critConcern", label:"Is the coinsurance exposure a concern for them?", opts:[
+      {v:"yes", l:"Yes — committed"},{v:"no", l:"No"}
+    ]},
     {t:"say", text:"That's where our <b>Gold, Silver and Bronze</b> options come in. They're designed to cover those big out of pocket risks while you stay on your plan with {carrier} — and if you decide to transition to a new plan later on."}
   ]},
 
@@ -2135,6 +2134,7 @@ function summaryLines(){
     if(onMA()){
       p("Exact plan name", A("planNameExact"));
       p("Critical illness share", A("criticalPct") ? A("criticalPct")+"%" : "");
+      p("Coinsurance a concern", A("critConcern"));
       p("Anything changed", A("sepChanges")); p("Details", A("sepDetail"));
       p("Carrier mailed them", A("sepMail"));
       p("Timing route", (aepRoute()==="in" ? "In AEP / verified SEP" : "Outside AEP") + " — " + aepWhy());
