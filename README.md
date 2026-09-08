@@ -167,6 +167,26 @@ The browser tests use Playwright, which is not a dependency of the app:
 npm i -D playwright && npx playwright install chromium
 ```
 
+## Recommendation email
+
+**Build email** in the top bar opens a builder that produces a copy-paste recommendation
+email. It pre-fills from the call — the branch, their carrier and what they pay, the
+specific exposure that branch established, their goals in their own words, the tier they
+chose, the quoted price and the effective date — so the email quotes the same numbers the
+agent actually said rather than what they remember afterwards. Everything stays editable,
+and it works from scratch if opened cold.
+
+Eight products, each with its own pricing and benefit fields: Medicare Supplement, MAPD,
+Cancer/Heart Attack & Stroke, Hospital Indemnity, Recovery Care, Home Healthcare,
+Dental/Vision/Hearing and a Prescription Drug Plan. Ticking one adds a block to the email
+and its premium to the running total.
+
+The email is built in headed sections — what they said mattered, where they are today,
+what's being recommended, how it closes the gap, and what happens next. The situation and
+the closing steps come from their branch, and each product is tied back to the exposure it
+actually answers, using the real figures from the call. Copy it as rich text so the
+headings survive a paste into Gmail or Outlook, or as plain text.
+
 ## Other things it does
 
 - Captures the opening goals loop and reads every goal back in the formal recommendation

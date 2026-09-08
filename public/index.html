@@ -258,6 +258,62 @@ input::placeholder,textarea::placeholder{color:var(--ink-3);opacity:1}
 .flagrow{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--warn-ink);
   background:var(--warn-bg);border-left:3px solid var(--warn-line);border-radius:0 8px 8px 0;padding:8px 11px;margin-bottom:8px}
 
+/* ---------- recommendation email builder ---------- */
+.em-wrap{position:fixed;inset:0;z-index:200;background:rgba(8,11,18,.55);
+  display:none;padding:28px;overflow:auto;backdrop-filter:blur(2px)}
+.em-wrap.on{display:block}
+.em-panel{max-width:1360px;margin:0 auto;background:var(--bg);border:1px solid var(--line);
+  border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.35);overflow:hidden}
+.em-head{display:flex;align-items:flex-start;gap:16px;padding:18px 24px;
+  background:var(--panel);border-bottom:1px solid var(--line)}
+.em-head h2{margin:0;font-size:20px;letter-spacing:-.02em}
+.em-head .em-sub{margin-top:3px;font-size:13.5px;color:var(--ink-3)}
+.em-head .tbtn{margin-left:auto}
+.em-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:18px;padding:18px 24px 24px}
+@media (max-width:1080px){.em-body{grid-template-columns:minmax(0,1fr)}}
+.em-controls{display:flex;flex-direction:column;gap:14px;min-width:0}
+.em-preview{min-width:0}
+@media (min-width:1081px){.em-preview{position:sticky;top:0;align-self:start}}
+.em-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.em-card h3{margin:0;padding:11px 15px;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3);border-bottom:1px solid var(--line);background:var(--panel-2);
+  display:flex;align-items:center;gap:10px}
+.em-actions{margin-left:auto;display:flex;gap:8px}
+.em-actions .btn{padding:6px 12px;font-size:13px}
+.em-in{padding:13px 15px}
+.em-in textarea{width:100%;min-height:74px;background:var(--panel);color:var(--ink);
+  border:1.5px solid var(--line-2);border-radius:9px;padding:10px 12px;font-size:14.5px;
+  outline:none;resize:vertical;line-height:1.5}
+.em-in textarea:focus{border-color:var(--brand)}
+.em-in select{width:100%;background:var(--panel);color:var(--ink);border:1.5px solid var(--line-2);
+  border-radius:9px;padding:10px 12px;font-size:15px;outline:none}
+.em-prod{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--panel-2)}
+.em-prod.on{border-color:var(--brand-line);background:var(--brand-soft)}
+.em-prod:last-of-type{margin-bottom:0}
+.em-tick{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px;font-weight:650;color:var(--ink-2)}
+.em-prod.on .em-tick{color:var(--brand)}
+.em-tick input{position:absolute;opacity:0;pointer-events:none}
+.em-tick .box{width:17px;height:17px;border-radius:5px;border:2px solid var(--line-2);flex:none;
+  display:grid;place-items:center;background:var(--panel)}
+.em-prod.on .em-tick .box{border-color:var(--brand);background:var(--brand)}
+.em-prod.on .em-tick .box::after{content:"";width:9px;height:5px;border-left:2px solid var(--brand-ink);
+  border-bottom:2px solid var(--brand-ink);transform:rotate(-45deg) translate(1px,-1px)}
+.em-fields{margin-top:10px}
+.em-fields .f label{font-size:11.5px}
+.em-fields .f input{padding:8px 10px;font-size:14px}
+.em-total{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
+  font-size:16px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.em-total b{color:var(--brand);font-size:19px}
+.em-subject{padding:10px 15px;border-bottom:1px solid var(--line);background:var(--panel-2);
+  font-size:14.5px;font-weight:650}
+.em-subject span{display:block;font-size:10.5px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-3);margin-bottom:3px}
+.em-out{padding:18px 20px;font-size:14.5px;line-height:1.6;max-height:62vh;overflow:auto;background:var(--panel)}
+.em-out p{margin:0 0 11px}
+.em-out ul,.em-out ol{margin:0 0 11px;padding-left:22px}
+.em-out li{margin:5px 0}
+.em-out b{color:var(--ink)}
+
 /* compliance stop */
 .stopcard{border:2px solid var(--warn-line);border-radius:12px;overflow:hidden;background:var(--panel)}
 .stopcard-h{padding:11px 16px;background:var(--warn-bg);border-bottom:1px solid var(--warn-line);
@@ -301,6 +357,7 @@ pre.out{
     <span class="chip" id="avatarChip"><span class="dot"></span><span id="avatarText">Determining avatar…</span></span>
     <span class="spacer"></span>
     <button class="tbtn" id="btnTheme" title="Toggle light / dark">Theme</button>
+    <button class="tbtn" id="btnEmail">Build email</button>
     <button class="tbtn" id="btnSummary">Call summary</button>
     <button class="tbtn" id="btnReset">New call</button>
   </div>
@@ -353,6 +410,7 @@ const BLANK = {
   a:{},              // every answer, keyed
   goals:[],          // captured goals from the opening
   scratch:"",        // free-form agent notes
+  email:{scenario:"", products:{}, note:""},
   step:0,
   started:new Date().toISOString()
 };
@@ -1715,6 +1773,472 @@ const STEPS = [
   blocks:[{t:"summary"}]}
 ];
 
+
+/* ============================================================
+   RECOMMENDATION EMAIL BUILDER
+   Pre-fills from the call, so the email quotes the same numbers
+   the agent actually said rather than what they remember after.
+   ============================================================ */
+const M = v => { const n = num(v); return n ? money(n) : ""; };
+const or = (v,f) => v || f;
+
+const EMAIL_PRODUCTS = [
+  { k:"supp", name:"Medicare Supplement",
+    fields:[{k:"carrier",l:"Carrier",w:"md"},{k:"plan",l:"Plan",ph:"G or N",w:"sm"},
+            {k:"premium",l:"$ / month",w:"sm"}],
+    rec:  v => "Medicare Supplement Plan "+or(v.plan,"G")+(v.carrier?" with "+v.carrier:"")+
+                (M(v.premium)?" — "+M(v.premium)+" a month":""),
+    why:  v => "After a small annual deductible you are covered 100% for approved medical costs. No networks, no prior authorization, and any doctor in the country who takes Medicare.",
+    close:(v,sc) => sc==="supp"
+      ? "The coverage is identical by law, so this is the same protection you have now for less money every month. Nothing about your doctors or your benefits changes."
+      : "Original Medicare leaves 20% of every medical bill on you with no cap — on a $100,000 bill that is $20,000 out of your pocket. The supplement removes that exposure entirely." },
+
+  { k:"mapd", name:"Medicare Advantage (MAPD)",
+    fields:[{k:"carrier",l:"Carrier",w:"md"},{k:"planName",l:"Plan name",w:"md"},
+            {k:"premium",l:"$ / month",w:"sm"},{k:"maxOOP",l:"Max out of pocket",w:"sm"}],
+    rec:  v => or(v.carrier,"Medicare Advantage")+(v.planName?" "+v.planName:"")+
+                " — "+or(M(v.premium),"$0")+" a month",
+    why:  v => "Your medical cover, prescription drugs and extras like dental, vision and hearing all in one plan"+
+                (M(v.maxOOP)?", with everything capped at "+M(v.maxOOP)+" in a year":"")+".",
+    close:v => M(v.maxOOP)
+                ? "It puts a ceiling on a bad year. Whatever happens, your medical costs stop at "+M(v.maxOOP)+"."
+                : "It puts a ceiling on what a bad health year can cost you." },
+
+  { k:"chs", name:"Cancer, Heart Attack & Stroke",
+    fields:[{k:"tier",l:"Tier",ph:"Gold / Silver / Bronze",w:"sm"},
+            {k:"cancer",l:"Cancer benefit",w:"sm"},{k:"hs",l:"Heart attack & stroke",w:"sm"},
+            {k:"premium",l:"$ / month",w:"sm"}],
+    rec:  v => or(v.tier,"Critical illness cover")+
+                (M(v.cancer)?" — "+M(v.cancer)+" for cancer and "+or(M(v.hs),M(v.cancer))+" for heart attack and stroke":"")+
+                (M(v.premium)?", "+M(v.premium)+" a month":""),
+    why:  v => "This pays cash straight to you on diagnosis. Not to a hospital, to you — so you decide what it covers, whether that is treatment, travel to a specialist, or the mortgage while you are not working.",
+    close:(v,sc) => {
+      if(sc==="employer"){
+        const m = M(A("maxOOP"));
+        return "A critical illness is the fastest way to hit "+(m?"that "+m+" max out of pocket":"your max out of pocket")+
+          ", and it usually comes with time off work. This pays cash directly to you, so neither of those comes out of your savings.";
+      }
+      if(sc==="ma-out" || sc==="ma-in"){
+        const pct = A("criticalPct") ? A("criticalPct").replace(/[^0-9.]/g,"")+"%" : "a share";
+        return "This is the exposure we found in your Summary of Benefits. Your plan has you paying "+pct+
+          " of treatment costs on a critical illness — this pays cash directly to you to cover it.";
+      }
+      return "Even with excellent coverage, the things Medicare will not approve come straight out of savings — and a cancer diagnosis is where that adds up fastest. This is the money that covers them.";
+    } },
+
+  { k:"hip", name:"Hospital Indemnity",
+    fields:[{k:"daily",l:"Daily benefit",w:"sm"},{k:"days",l:"Days covered",w:"sm"},
+            {k:"premium",l:"$ / month",w:"sm"}],
+    rec:  v => "Hospital Indemnity"+(M(v.daily)?" — "+M(v.daily)+" a day for up to "+or(v.days,"[X]")+" days":"")+
+                (M(v.premium)?", "+M(v.premium)+" a month":""),
+    why:  v => "It pays you a set amount for every day you spend in hospital, on top of whatever your plan pays.",
+    close:v => "A hospital stay is where the copays stack up fastest. This covers them so an admission does not turn into a bill." },
+
+  { k:"recovery", name:"Recovery Care",
+    fields:[{k:"benefit",l:"Benefit",w:"sm"},{k:"period",l:"Benefit period",ph:"e.g. 12 months",w:"md"},
+            {k:"premium",l:"$ / month",w:"sm"}],
+    rec:  v => "Recovery Care"+(M(v.benefit)?" — "+M(v.benefit):"")+(v.period?" for up to "+v.period:"")+
+                (M(v.premium)?", "+M(v.premium)+" a month":""),
+    why:  v => "This covers skilled nursing and rehabilitation after a hospital stay.",
+    close:v => "Medicare stops paying for skilled nursing after day 100 — and it can stop sooner if the plan decides you are not improving. After that every dollar is yours. This is what covers it." },
+
+  { k:"homehealth", name:"Home Healthcare",
+    fields:[{k:"benefit",l:"Benefit",w:"sm"},{k:"period",l:"Benefit period",ph:"e.g. 12 months",w:"md"},
+            {k:"premium",l:"$ / month",w:"sm"}],
+    rec:  v => "Home Healthcare"+(M(v.benefit)?" — "+M(v.benefit):"")+(v.period?" for up to "+v.period:"")+
+                (M(v.premium)?", "+M(v.premium)+" a month":""),
+    why:  v => "This covers care in your own home rather than in a facility.",
+    close:v => "A medical professional helping you recover at home runs about $5,000 a month, and custodial care in a nursing home about $6,000. Medicare does not pay for either one." },
+
+  { k:"dvh", name:"Dental, Vision & Hearing",
+    fields:[{k:"annual",l:"Annual benefit",w:"sm"},{k:"premium",l:"$ / month",w:"sm"}],
+    rec:  v => "Dental, Vision and Hearing"+(M(v.annual)?" — "+M(v.annual)+" a year in benefits":"")+
+                (M(v.premium)?", "+M(v.premium)+" a month":""),
+    why:  v => "Cleanings, fillings, glasses and hearing aids.",
+    close:v => "Original Medicare does not cover routine dental, vision or hearing at all. A single crown or a pair of hearing aids comes straight out of pocket without this." },
+
+  { k:"pdp", name:"Prescription Drug Plan",
+    fields:[{k:"carrier",l:"Carrier",w:"md"},{k:"planName",l:"Plan name",w:"md"},
+            {k:"premium",l:"$ / month",w:"sm"}],
+    rec:  v => "Prescription Drug Plan"+(v.carrier?" — "+v.carrier:"")+(v.planName?" "+v.planName:"")+
+                (M(v.premium)?", "+M(v.premium)+" a month":""),
+    why:  v => "Covers your prescriptions and keeps you clear of the Part D late enrollment penalty.",
+    close:v => "The penalty for going without drug coverage is permanent — it is added to your premium for as long as you have Medicare." }
+];
+
+/* ---- the scenario, defaulted from the call ---- */
+const EMAIL_SCENARIOS = [
+  {v:"employer",  l:"Employer coverage — delaying Medicare"},
+  {v:"t65noss",   l:"Turning 65 — not on Social Security"},
+  {v:"t65ss",     l:"Turning 65 — on Social Security"},
+  {v:"ma-out",    l:"On Medicare Advantage — outside AEP"},
+  {v:"ma-in",     l:"On Medicare Advantage — in AEP or SEP"},
+  {v:"supp",      l:"On a Medicare Supplement"}
+];
+function scenarioFromCall(){
+  const av = avatar();
+  if(av==="employer") return "employer";
+  if(av==="t65ss")    return "t65ss";
+  if(av==="t65noss")  return "t65noss";
+  if(av==="medicare") return onSupp() ? "supp" : (aepRoute()==="in" ? "ma-in" : "ma-out");
+  return "t65noss";
+}
+const emailScenario = () => S.email.scenario || scenarioFromCall();
+
+/* ---- fill in what the call already knows, without overwriting the agent ---- */
+function prefillEmail(){
+  const P = S.email.products;
+  const put = (pk, fk, val) => {
+    if(!val) return;
+    P[pk] = P[pk] || {};
+    if(!P[pk][fk]) P[pk][fk] = String(val);
+  };
+  const on = pk => { P[pk] = P[pk] || {}; if(P[pk].on===undefined) P[pk].on = true; };
+
+  const tierPrice = {gold:150, silver:100, bronze:50}[A("chsChoice")];
+  const tierName  = {gold:"Gold", silver:"Silver", bronze:"Bronze"}[A("chsChoice")];
+  const tierBen   = {gold:30000, silver:20000, bronze:10000}[A("chsChoice")];
+  if(tierName){
+    on("chs");
+    put("chs","tier",tierName); put("chs","premium",tierPrice);
+    put("chs","cancer",tierBen); put("chs","hs",tierBen);
+  }
+
+  const sc = emailScenario();
+  if(sc==="supp"){
+    on("supp");
+    put("supp","carrier", A("newCarrier")); put("supp","premium", A("newPrice")); put("supp","plan","G");
+  } else if(sc==="ma-out" || sc==="ma-in"){
+    /* Their current plan is not a recommendation — outside AEP it cannot even be
+       changed, and inside AEP the new plan is not chosen until the review. The
+       agent ticks MAPD and types the new plan if and when there is one. */
+  } else if(sc==="t65noss" || sc==="t65ss"){
+    if(A("leaning")==="supp"){
+      on("supp"); on("pdp");
+      put("supp","premium", A("planGPremium")); put("supp","plan","G");
+      put("pdp","premium", A("partDPremium") || 10);
+    } else if(A("leaning")==="ma"){
+      on("mapd");
+      put("mapd","premium", A("mapdPremium") || 0);
+    }
+  }
+  save();
+}
+
+const emailOn = pk => !!(S.email.products[pk] && S.email.products[pk].on);
+const emailVal = (pk,fk) => (S.email.products[pk] && S.email.products[pk][fk]) || "";
+function emailTotal(){
+  return EMAIL_PRODUCTS.reduce((n,p)=> n + (emailOn(p.k) ? num(emailVal(p.k,"premium")) : 0), 0);
+}
+
+/* ---- the situation and the exposure, in their own terms ---- */
+function emailSituation(){
+  const sc = emailScenario();
+  const carrier = A("carrier") || "your current plan";
+  const pays = M(A("currentPremium"));
+  const moop = M(A("maxOOP"));
+  if(sc==="employer")
+    return "Right now you are on "+carrier+" through your employer"+(pays?", at "+pays+" a month":"")+
+      ". That is a strong plan and my first recommendation is that you keep it and delay Medicare — you will not be penalized for that, because your employer coverage is creditable."+
+      (moop ? " The gap is the max out of pocket. In a bad health year you could pay "+moop+" for your care, on top of any income you lose while you are not working." : "");
+  if(sc==="t65noss" || sc==="t65ss")
+    return "You are moving onto Original Medicare"+(sc==="t65ss"
+      ? ", and because you are drawing Social Security you will be enrolled in Parts A and B automatically."
+      : ", and we will get you enrolled in Parts A and B manually about three months before your birth month.")+
+      " Original Medicare on its own is the part worth being clear about: it pays 80% and leaves the other 20% on you, with no cap at all. On a $100,000 bill that is $20,000 out of your own pocket.";
+  if(sc==="ma-out" || sc==="ma-in"){
+    const pct = A("criticalPct") ? A("criticalPct").replace(/[^0-9.]/g,"")+"%" : "a share";
+    return "You are on "+carrier+(A("planNameExact")?" — "+A("planNameExact"):"")+
+      (pays?", at "+pays+" a month":"")+". Going through the Summary of Benefits for that plan, your biggest exposure is to critical illness: the plan has you paying "+
+      pct+" of all treatment costs if you are diagnosed with cancer, or have a heart attack or a stroke."+
+      (sc==="ma-out" ? " Your plan itself is locked in until October 15th, so that is a separate conversation we will have then." : "");
+  }
+  return "You are on a Medicare Supplement with "+carrier+(pays?", at "+pays+" a month":"")+
+    ". That is the best medical coverage on the market and I would not ask you to give it up. Two things stand out. "+
+    (A("newPrice") && num(A("currentPremium")) > num(A("newPrice"))
+      ? "First, supplements are federally regulated, so a Plan G covers exactly the same things no matter whose name is on it — which means the only real difference is price, and you are currently paying "+
+        money(num(A("currentPremium"))-num(A("newPrice")))+" a month more than you need to. "
+      : "First, supplements are federally regulated, so a Plan G covers exactly the same things whoever you buy it from — the only real difference between carriers is price. ")+
+    "Second, your supplement covers what Medicare approves. It does not cover what Medicare will not: custodial care in a nursing home runs about $6,000 a month, a professional helping you recover at home about $5,000 a month, and critical illness medications like Keytruda run $10,000 a dose.";
+}
+
+/* ---- what happens next, straight from their branch ---- */
+function emailNextSteps(){
+  const sc = emailScenario();
+  const eff = A("effectiveDate") ? displayMDY(A("effectiveDate")) : "your effective date";
+  const oct = A("octDate") || "October";
+  const newC = A("newCarrier") || "the new carrier";
+  const bm = birthMonthName();
+  if(sc==="employer") return [
+    "We get the coverage above in place now, while your health makes it easy to get approved.",
+    "You keep your employer plan and delay Medicare.",
+    "When you retire or lose that coverage, you take form CMS L564 to your HR department and we submit it with your Medicare application. That form is what voids any penalty."];
+  if(sc==="t65noss") return [
+    "We get the coverage above in place now.",
+    "About three months before your birth month"+(bm?" of "+bm:"")+" we enroll you into Original Medicare Parts A and B. It takes about ten minutes and I will send you the instructions.",
+    "We enroll you into your plan ahead of your 65th birthday so there is no gap."];
+  if(sc==="t65ss") return [
+    "We get the coverage above in place now.",
+    "You will be enrolled into Parts A and B automatically — we just confirm it has happened.",
+    "We enroll you into your plan ahead of your 65th birthday so there is no gap."];
+  if(sc==="ma-out") return [
+    "We get the coverage above in place now, so you are protected while your plan is locked.",
+    "We meet again the week of "+oct+" to review your plan for next year. In September your carrier posts an Annual Notice of Change telling you what is moving on copays and drugs — I read it and compare your plan against everything else available to you."];
+  if(sc==="ma-in") return [
+    "We get the coverage above in place now.",
+    "We get back together within 48 hours for a full review of your plan — I run your doctors and your medications against every plan available in your area, which takes some time to do properly.",
+    "Your new coverage starts on "+eff+"."];
+  return [
+    "We get the coverage above in place now.",
+    "We submit the supplement application to "+newC+" to see if you qualify for the lower price.",
+    "Your new coverage starts on "+eff+" — and that is the day, and only that day, we cancel the old policy. You are never without coverage for a single day."];
+}
+
+/* ---- assemble ---- */
+function buildEmail(){
+  const first = A("clientFirst") || A("clientName") || "there";
+  const agent = A("agentName") || "";
+  const chosen = EMAIL_PRODUCTS.filter(p => emailOn(p.k));
+  const total = emailTotal();
+  const sc = emailScenario();
+  const S1=[], out=[];
+
+  const subject = "Your Medicare recommendation" + (A("clientFirst") ? " — "+A("clientFirst") : "");
+
+  out.push("Hi "+first+",");
+  out.push("");
+  out.push("Thanks for your time today. Here is everything we went over, in writing, so you have it in front of you.");
+
+  if(S.goals.length){
+    out.push("");
+    out.push("WHAT YOU TOLD ME MATTERED");
+    S.goals.forEach(g => out.push("  • "+g));
+  }
+
+  out.push("");
+  out.push("WHERE YOU ARE TODAY");
+  out.push(emailSituation());
+
+  if(chosen.length){
+    out.push("");
+    out.push("WHAT I'M RECOMMENDING");
+    chosen.forEach(p => {
+      const v = S.email.products[p.k] || {};
+      out.push("  • "+p.rec(v));
+      out.push("    "+p.why(v, sc));
+    });
+    if(total > 0){
+      out.push("");
+      out.push("  Total: "+money(total)+" a month.");
+    }
+
+    out.push("");
+    out.push("HOW THIS CLOSES THE GAP");
+    chosen.forEach(p => {
+      const v = S.email.products[p.k] || {};
+      out.push("  • "+p.name+" — "+p.close(v, sc));
+    });
+  }
+
+  out.push("");
+  out.push("WHAT HAPPENS NEXT");
+  emailNextSteps().forEach((s,i) => out.push("  "+(i+1)+". "+s));
+
+  if(S.email.note.trim()){
+    out.push("");
+    out.push(S.email.note.trim());
+  }
+
+  out.push("");
+  out.push("Any questions at all, just reply here or give me a call.");
+  out.push("");
+  out.push("Thanks,");
+  if(agent) out.push(agent);
+
+  const text = out.join("\n");
+
+  /* rich version so a paste into Gmail or Outlook keeps its shape */
+  const h = [];
+  const esc2 = t => esc(t);
+  h.push("<p>Hi "+esc2(first)+",</p>");
+  h.push("<p>Thanks for your time today. Here is everything we went over, in writing, so you have it in front of you.</p>");
+  if(S.goals.length){
+    h.push("<p><b>WHAT YOU TOLD ME MATTERED</b></p><ul>"+
+      S.goals.map(g=>"<li>"+esc2(g)+"</li>").join("")+"</ul>");
+  }
+  h.push("<p><b>WHERE YOU ARE TODAY</b><br>"+esc2(emailSituation())+"</p>");
+  if(chosen.length){
+    h.push("<p><b>WHAT I'M RECOMMENDING</b></p><ul>"+
+      chosen.map(p=>{ const v=S.email.products[p.k]||{};
+        return "<li><b>"+esc2(p.rec(v))+"</b><br>"+esc2(p.why(v, sc))+"</li>"; }).join("")+"</ul>");
+    if(total>0) h.push("<p><b>Total: "+money(total)+" a month.</b></p>");
+    h.push("<p><b>HOW THIS CLOSES THE GAP</b></p><ul>"+
+      chosen.map(p=>{ const v=S.email.products[p.k]||{};
+        return "<li><b>"+esc2(p.name)+"</b> — "+esc2(p.close(v, sc))+"</li>"; }).join("")+"</ul>");
+  }
+  h.push("<p><b>WHAT HAPPENS NEXT</b></p><ol>"+
+    emailNextSteps().map(s=>"<li>"+esc2(s)+"</li>").join("")+"</ol>");
+  if(S.email.note.trim()) h.push("<p>"+esc2(S.email.note.trim()).replace(/\n/g,"<br>")+"</p>");
+  h.push("<p>Any questions at all, just reply here or give me a call.</p>");
+  h.push("<p>Thanks,"+(agent?"<br>"+esc2(agent):"")+"</p>");
+
+  return { subject, text, html:h.join("\n") };
+}
+
+
+/* ---------- the builder ---------- */
+function emailModalHTML(){
+  const sc = emailScenario();
+  const total = emailTotal();
+  const built = buildEmail();
+  return '<div class="em-head">'+
+      '<div><h2>Build recommendation email</h2>'+
+      '<div class="em-sub">Filled in from this call. Change anything before you copy it.</div></div>'+
+      '<button class="tbtn" id="emClose">Close</button>'+
+    "</div>"+
+    '<div class="em-body">'+
+      '<div class="em-controls">'+
+        '<div class="em-card"><h3>Their situation</h3><div class="em-in">'+
+          '<div class="frow"><div class="f md"><label>Scenario</label><select id="emScenario">'+
+            EMAIL_SCENARIOS.map(o=>'<option value="'+o.v+'"'+(sc===o.v?" selected":"")+">"+esc(o.l)+"</option>").join("")+
+          "</select>"+
+          (S.email.scenario && S.email.scenario!==scenarioFromCall()
+            ? '<div class="hint bad">Changed by hand — the call says '+
+              esc((EMAIL_SCENARIOS.find(o=>o.v===scenarioFromCall())||{}).l||"")+".</div>"
+            : '<div class="hint">From the call.</div>')+
+          "</div></div>"+
+        "</div></div>"+
+
+        '<div class="em-card"><h3>What you are recommending</h3><div class="em-in">'+
+          EMAIL_PRODUCTS.map(p=>{
+            const on = emailOn(p.k);
+            return '<div class="em-prod'+(on?" on":"")+'">'+
+              '<label class="em-tick"><input type="checkbox" data-emprod="'+p.k+'"'+(on?" checked":"")+'>'+
+                '<span class="box"></span><span>'+esc(p.name)+"</span></label>"+
+              (on ? '<div class="frow em-fields">'+p.fields.map(f=>
+                    '<div class="f '+(f.w||"sm")+'"><label>'+esc(f.l)+"</label>"+
+                    '<input data-emk="'+p.k+'" data-emf="'+f.k+'" value="'+esc(emailVal(p.k,f.k))+
+                    '" placeholder="'+esc(f.ph||"")+'"></div>').join("")+"</div>" : "")+
+            "</div>";
+          }).join("")+
+          (total>0 ? '<div class="em-total">Total <b>'+money(total)+'</b> a month</div>' : "")+
+        "</div></div>"+
+
+        '<div class="em-card"><h3>Anything to add</h3><div class="em-in">'+
+          '<textarea id="emNote" placeholder="A line of your own — goes in just before the sign-off.">'+esc(S.email.note)+"</textarea>"+
+        "</div></div>"+
+      "</div>"+
+
+      '<div class="em-preview">'+
+        '<div class="em-card" style="margin:0">'+
+          '<h3>Preview<span class="em-actions">'+
+            '<button class="btn" id="emCopyRich">Copy for email</button>'+
+            '<button class="btn ghost" id="emCopyText">Copy plain text</button>'+
+          "</span></h3>"+
+          '<div class="em-subject"><span>Subject</span>'+esc(built.subject)+"</div>"+
+          '<div class="em-out" id="emOut">'+built.html+"</div>"+
+        "</div>"+
+      "</div>"+
+    "</div>";
+}
+
+function openEmail(){
+  prefillEmail();
+  let el = document.getElementById("emailModal");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "emailModal"; el.className = "em-wrap";
+    document.body.appendChild(el);
+  }
+  el.innerHTML = '<div class="em-panel">'+emailModalHTML()+"</div>";
+  el.classList.add("on");
+  document.body.style.overflow = "hidden";
+}
+function refreshEmail(){
+  const el = document.getElementById("emailModal");
+  if(el && el.classList.contains("on")){
+    const panel = el.querySelector(".em-panel");
+    const keep = document.activeElement;
+    const k = keep && keep.dataset ? keep.dataset.emk : null;
+    const f = keep && keep.dataset ? keep.dataset.emf : null;
+    const pos = keep && typeof keep.selectionStart==="number" ? keep.selectionStart : null;
+    panel.innerHTML = emailModalHTML();
+    if(k && f){
+      const again = panel.querySelector('[data-emk="'+k+'"][data-emf="'+f+'"]');
+      if(again){ again.focus(); if(pos!=null){ try{ again.setSelectionRange(pos,pos); }catch(e){} } }
+    } else if(keep && keep.id==="emNote"){
+      const again = panel.querySelector("#emNote");
+      if(again){ again.focus(); if(pos!=null){ try{ again.setSelectionRange(pos,pos); }catch(e){} } }
+    }
+  }
+}
+function closeEmail(){
+  const el = document.getElementById("emailModal");
+  if(el){ el.classList.remove("on"); el.innerHTML = ""; }
+  document.body.style.overflow = "";
+}
+
+/* only the preview needs repainting while the agent types */
+function repaintPreview(){
+  const out = document.getElementById("emOut");
+  if(!out) return;
+  const built = buildEmail();
+  out.innerHTML = built.html;
+  const subj = document.querySelector(".em-subject");
+  if(subj) subj.innerHTML = "<span>Subject</span>"+esc(built.subject);
+  const tot = document.querySelector(".em-total");
+  const t = emailTotal();
+  if(tot) tot.innerHTML = t>0 ? "Total <b>"+money(t)+"</b> a month" : "";
+}
+
+document.addEventListener("click", e => {
+  if(e.target.id==="btnEmail"){ openEmail(); return; }
+  if(e.target.id==="emClose"){ closeEmail(); return; }
+  if(e.target.id==="emailModal"){ closeEmail(); return; }   /* click the backdrop */
+  const tick = e.target.closest("[data-emprod]");
+  if(tick){
+    const k = tick.dataset.emprod;
+    S.email.products[k] = S.email.products[k] || {};
+    S.email.products[k].on = tick.checked;
+    save(); refreshEmail(); return;
+  }
+  if(e.target.id==="emCopyRich"){ copyRich(e.target); return; }
+  if(e.target.id==="emCopyText"){ copy(buildEmail().text, e.target); return; }
+});
+document.addEventListener("input", e => {
+  const el = e.target;
+  if(el.dataset && el.dataset.emk){
+    S.email.products[el.dataset.emk] = S.email.products[el.dataset.emk] || {};
+    S.email.products[el.dataset.emk][el.dataset.emf] = el.value;
+    save(); repaintPreview(); return;
+  }
+  if(el.id==="emNote"){ S.email.note = el.value; save(); repaintPreview(); }
+});
+document.addEventListener("change", e => {
+  if(e.target.id==="emScenario"){
+    S.email.scenario = e.target.value; save(); prefillEmail(); refreshEmail();
+  }
+});
+document.addEventListener("keydown", e => {
+  if(e.key==="Escape" && document.getElementById("emailModal")?.classList.contains("on")) closeEmail();
+});
+
+/* Rich copy keeps the headings and bullets when pasted into a mail client. */
+async function copyRich(btn){
+  const built = buildEmail();
+  try{
+    if(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write){
+      await navigator.clipboard.write([new ClipboardItem({
+        "text/html":  new Blob([built.html], {type:"text/html"}),
+        "text/plain": new Blob([built.text], {type:"text/plain"})
+      })]);
+      toast("Copied — paste into your email");
+      return;
+    }
+  }catch(err){}
+  copy(built.text, btn);
+}
+
 /* ============================================================
    RENDER ENGINE
    ============================================================ */
@@ -2534,7 +3058,7 @@ $("#scratch").addEventListener("input", e=>{ S.scratch = e.target.value; save();
 $("#btnSummary").onclick = ()=>{ S.step = STEPS.length-1; save(); render(); window.scrollTo({top:0,behavior:"smooth"}); };
 $("#btnReset").onclick = ()=>{
   if(!confirm("Start a new call? Everything captured on this one will be cleared.")) return;
-  S = structuredClone(BLANK); save(); render(); toast("New call started");
+  closeEmail(); S = structuredClone(BLANK); save(); render(); toast("New call started");
 };
 $("#btnTheme").onclick = ()=>{
   const cur = document.documentElement.getAttribute("data-theme");
@@ -2545,6 +3069,7 @@ $("#btnTheme").onclick = ()=>{
 };
 document.addEventListener("keydown", e=>{
   if(e.target.matches("input,textarea,select")) return;
+  if(document.getElementById("emailModal")?.classList.contains("on")) return;
   if(e.key==="ArrowRight") go(1);
   if(e.key==="ArrowLeft")  go(-1);
 });
