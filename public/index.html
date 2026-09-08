@@ -1780,18 +1780,42 @@ const STEPS = [
    the agent actually said rather than what they remember after.
    ============================================================ */
 const M = v => { const n = num(v); return n ? money(n) : ""; };
+/* Plan N's two copays — the only thing separating it from Plan G. */
+const N_DOC = "$20", N_ER = "$50";
+/* "N", "Plan N", "plan n" all resolve to N; anything unset falls back to G. */
+const planLetter = v => {
+  const L = String(v.plan||"").toUpperCase().replace(/[^A-Z]/g,"");
+  return L ? L.slice(-1) : "G";
+};
 const or = (v,f) => v || f;
 
 const EMAIL_PRODUCTS = [
   { k:"supp", name:"Medicare Supplement",
     fields:[{k:"carrier",l:"Carrier",w:"md"},{k:"plan",l:"Plan",ph:"G or N",w:"sm"},
             {k:"premium",l:"$ / month",w:"sm"}],
-    rec:  v => "Medicare Supplement Plan "+or(v.plan,"G")+(v.carrier?" with "+v.carrier:"")+
+    rec:  v => "Medicare Supplement Plan "+planLetter(v)+(v.carrier?" with "+v.carrier:"")+
                 (M(v.premium)?" — "+M(v.premium)+" a month":""),
-    why:  v => "After a small annual deductible you are covered 100% for approved medical costs. No networks, no prior authorization, and any doctor in the country who takes Medicare.",
-    close:(v,sc) => sc==="supp"
-      ? "The coverage is identical by law, so this is the same protection you have now for less money every month. Nothing about your doctors or your benefits changes."
-      : "Original Medicare leaves 20% of every medical bill on you with no cap — on a $100,000 bill that is $20,000 out of your pocket. The supplement removes that exposure entirely." },
+    /* Plan N is not Plan G. Same annual deductible, same standardized coverage,
+       but N leaves two copays behind — so the email must not tell an N client
+       they are covered 100%. */
+    why:  v => planLetter(v)==="N"
+      ? "Plan N covers the same things Plan G does, with the same annual deductible, apart from two small copays: up to "+N_DOC+" to see a doctor or a specialist, and "+N_ER+" for an emergency room visit. No networks, no prior authorization, and any doctor in the country who takes Medicare."
+      : "After the annual deductible you are covered 100% for approved medical costs. No networks, no prior authorization, and any doctor in the country who takes Medicare.",
+    close:(v,sc) => {
+      const n = planLetter(v)==="N";
+      const copays = "a "+N_DOC+" copay to see a doctor or specialist and "+N_ER+" for an emergency room visit";
+      if(sc==="supp"){
+        const cur = String(A("planType")||"").toUpperCase().replace(/[^A-Z]/g,"").slice(-1);
+        if(n && cur==="G")
+          return "Plan letters are set by law, so this is standardized coverage either way. Moving from Plan G to Plan N adds "+copays+" — that is the whole difference between them, and it is why the premium is lower.";
+        if(n)
+          return "Plan letters are set by law, so the coverage is fixed. Plan N leaves you "+copays+", and nothing else about your doctors or your benefits changes.";
+        return "The coverage is identical by law, so this is the same protection you have now for less money every month. Nothing about your doctors or your benefits changes.";
+      }
+      const base = "Original Medicare leaves 20% of every medical bill on you with no cap — on a $100,000 bill that is $20,000 out of your pocket. ";
+      return base + (n ? "Plan N removes that exposure. All you are left with is "+copays+"."
+                       : "The supplement removes that exposure entirely.");
+    } },
 
   { k:"mapd", name:"Medicare Advantage (MAPD)",
     fields:[{k:"carrier",l:"Carrier",w:"md"},{k:"planName",l:"Plan name",w:"md"},
