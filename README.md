@@ -181,6 +181,12 @@ Cancer/Heart Attack & Stroke, Hospital Indemnity, Recovery Care, Home Healthcare
 Dental/Vision/Hearing and a Prescription Drug Plan. Ticking one adds a block to the email
 and its premium to the running total.
 
+The panel on the right is directly editable — click into it and type, subject line
+included. The first edit takes ownership: the draft stops following the fields and says
+so, with a **Rebuild from fields** button to start clean. That way an agent who reworks a
+sentence and then fixes a premium never loses their wording silently. The draft is saved
+with the call, so closing and reopening the builder is safe, and "New call" clears it.
+
 The email is built in headed sections — what they said mattered, where they are today,
 what's being recommended, how it closes the gap, and what happens next. The situation and
 the closing steps come from their branch, and each product is tied back to the exposure it
