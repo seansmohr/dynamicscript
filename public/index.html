@@ -308,10 +308,20 @@ input::placeholder,textarea::placeholder{color:var(--ink-3);opacity:1}
   font-size:14.5px;font-weight:650}
 .em-subject span{display:block;font-size:10.5px;font-weight:700;letter-spacing:.08em;
   text-transform:uppercase;color:var(--ink-3);margin-bottom:3px}
-.em-out{padding:18px 20px;font-size:14.5px;line-height:1.6;max-height:62vh;overflow:auto;background:var(--panel)}
-.em-out[contenteditable="true"]{outline:none;cursor:text;border-radius:0 0 12px 12px}
-.em-out[contenteditable="true"]:hover{background:var(--panel-2)}
-.em-out[contenteditable="true"]:focus{background:var(--panel);box-shadow:inset 0 0 0 2px var(--brand)}
+.em-out{padding:12px 14px;font-size:14.5px;line-height:1.6;max-height:62vh;overflow:auto;background:var(--panel)}
+.em-secwrap{position:relative;border-radius:8px;border:1px solid transparent;padding:2px 6px;margin-bottom:2px}
+.em-secwrap[hidden]{display:none}
+.em-secwrap:hover{border-color:var(--line)}
+.em-secwrap.edited{border-color:var(--do-line);background:var(--do-bg)}
+.em-sec{outline:none;cursor:text;border-radius:6px;padding:4px 4px 1px}
+.em-sec:focus{box-shadow:0 0 0 2px var(--brand)}
+.em-reset{position:absolute;top:4px;right:6px;z-index:2;background:var(--panel);color:var(--do-ink);
+  border:1px solid var(--do-line);border-radius:99px;padding:2px 9px;font-size:11px;font-weight:700;
+  cursor:pointer;opacity:.5;transition:opacity .12s}
+.em-secwrap:hover .em-reset,.em-reset:focus{opacity:1}
+.em-mini{background:none;border:none;color:var(--do-ink);font:inherit;font-size:10.5px;font-weight:700;
+  text-decoration:underline;cursor:pointer;padding:0 0 0 2px}
+.em-subject.edited{background:var(--do-bg)}
 /* the class sets display:flex, which would otherwise beat the hidden attribute */
 .em-edited[hidden]{display:none}
 .em-edited{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 15px;
@@ -424,7 +434,7 @@ const BLANK = {
   a:{},              // every answer, keyed
   goals:[],          // captured goals from the opening
   scratch:"",        // free-form agent notes
-  email:{scenario:"", products:{}, note:"", draft:null},
+  email:{scenario:"", products:{}, note:"", edits:{}, subject:null},
   step:0,
   started:new Date().toISOString()
 };
@@ -2032,116 +2042,102 @@ function emailNextSteps(){
     "Your new coverage starts on "+eff+" — and that is the day, and only that day, we cancel the old policy. You are never without coverage for a single day."];
 }
 
-/* ---- assemble ---- */
-function buildEmail(){
-  const first = A("clientFirst") || A("clientName") || "there";
-  const agent = A("agentName") || "";
+/* ---- assemble ----------------------------------------------------------
+   The email is built as named sections, and ownership is tracked per
+   section. Edit the situation paragraph and it freezes; the pricing
+   underneath keeps following the fields.                                  */
+const EMAIL_SECTIONS = ["greeting","goals","situation","recommend","closes","next","signoff"];
+const SECTION_LABELS = {
+  greeting:"Greeting", goals:"What you told me mattered", situation:"Where you are today",
+  recommend:"What I'm recommending", closes:"How this closes the gap",
+  next:"What happens next", signoff:"Sign-off"
+};
+
+function generatedSections(){
+  const first  = A("clientFirst") || A("clientName") || "there";
+  const agent  = A("agentName") || "";
   const chosen = EMAIL_PRODUCTS.filter(p => emailOn(p.k));
-  const total = emailTotal();
-  const sc = emailScenario();
-  const S1=[], out=[];
+  const total  = emailTotal();
+  const sc     = emailScenario();
+  const g = {};
 
-  const subject = "Your Medicare recommendation" + (A("clientFirst") ? " — "+A("clientFirst") : "");
+  g.greeting = "<p>Hi "+esc(first)+",</p>"+
+    "<p>Thanks for your time today. Here is everything we went over, in writing, so you have it in front of you.</p>";
 
-  out.push("Hi "+first+",");
-  out.push("");
-  out.push("Thanks for your time today. Here is everything we went over, in writing, so you have it in front of you.");
+  g.goals = S.goals.length
+    ? "<p><b>WHAT YOU TOLD ME MATTERED</b></p><ul>"+
+      S.goals.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>"
+    : "";
 
-  if(S.goals.length){
-    out.push("");
-    out.push("WHAT YOU TOLD ME MATTERED");
-    S.goals.forEach(g => out.push("  • "+g));
-  }
+  g.situation = "<p><b>WHERE YOU ARE TODAY</b><br>"+esc(emailSituation())+"</p>";
 
-  out.push("");
-  out.push("WHERE YOU ARE TODAY");
-  out.push(emailSituation());
-
-  if(chosen.length){
-    out.push("");
-    out.push("WHAT I'M RECOMMENDING");
-    chosen.forEach(p => {
-      const v = S.email.products[p.k] || {};
-      out.push("  • "+p.rec(v));
-      out.push("    "+p.why(v, sc));
-    });
-    if(total > 0){
-      out.push("");
-      out.push("  Total: "+money(total)+" a month.");
-    }
-
-    out.push("");
-    out.push("HOW THIS CLOSES THE GAP");
-    chosen.forEach(p => {
-      const v = S.email.products[p.k] || {};
-      out.push("  • "+p.name+" — "+p.close(v, sc));
-    });
-  }
-
-  out.push("");
-  out.push("WHAT HAPPENS NEXT");
-  emailNextSteps().forEach((s,i) => out.push("  "+(i+1)+". "+s));
-
-  if(S.email.note.trim()){
-    out.push("");
-    out.push(S.email.note.trim());
-  }
-
-  out.push("");
-  out.push("Any questions at all, just reply here or give me a call.");
-  out.push("");
-  out.push("Thanks,");
-  if(agent) out.push(agent);
-
-  const text = out.join("\n");
-
-  /* rich version so a paste into Gmail or Outlook keeps its shape */
-  const h = [];
-  const esc2 = t => esc(t);
-  h.push("<p>Hi "+esc2(first)+",</p>");
-  h.push("<p>Thanks for your time today. Here is everything we went over, in writing, so you have it in front of you.</p>");
-  if(S.goals.length){
-    h.push("<p><b>WHAT YOU TOLD ME MATTERED</b></p><ul>"+
-      S.goals.map(g=>"<li>"+esc2(g)+"</li>").join("")+"</ul>");
-  }
-  h.push("<p><b>WHERE YOU ARE TODAY</b><br>"+esc2(emailSituation())+"</p>");
-  if(chosen.length){
-    h.push("<p><b>WHAT I'M RECOMMENDING</b></p><ul>"+
+  g.recommend = chosen.length
+    ? "<p><b>WHAT I'M RECOMMENDING</b></p><ul>"+
       chosen.map(p=>{ const v=S.email.products[p.k]||{};
-        return "<li><b>"+esc2(p.rec(v))+"</b><br>"+esc2(p.why(v, sc))+"</li>"; }).join("")+"</ul>");
-    if(total>0) h.push("<p><b>Total: "+money(total)+" a month.</b></p>");
-    h.push("<p><b>HOW THIS CLOSES THE GAP</b></p><ul>"+
-      chosen.map(p=>{ const v=S.email.products[p.k]||{};
-        return "<li><b>"+esc2(p.name)+"</b> — "+esc2(p.close(v, sc))+"</li>"; }).join("")+"</ul>");
-  }
-  h.push("<p><b>WHAT HAPPENS NEXT</b></p><ol>"+
-    emailNextSteps().map(s=>"<li>"+esc2(s)+"</li>").join("")+"</ol>");
-  if(S.email.note.trim()) h.push("<p>"+esc2(S.email.note.trim()).replace(/\n/g,"<br>")+"</p>");
-  h.push("<p>Any questions at all, just reply here or give me a call.</p>");
-  h.push("<p>Thanks,"+(agent?"<br>"+esc2(agent):"")+"</p>");
+        return "<li><b>"+esc(p.rec(v))+"</b><br>"+esc(p.why(v, sc))+"</li>"; }).join("")+"</ul>"+
+      (total>0 ? "<p><b>Total: "+money(total)+" a month.</b></p>" : "")
+    : "";
 
-  return { subject, text, html:h.join("\n") };
+  g.closes = chosen.length
+    ? "<p><b>HOW THIS CLOSES THE GAP</b></p><ul>"+
+      chosen.map(p=>{ const v=S.email.products[p.k]||{};
+        return "<li><b>"+esc(p.name)+"</b> — "+esc(p.close(v, sc))+"</li>"; }).join("")+"</ul>"
+    : "";
+
+  g.next = "<p><b>WHAT HAPPENS NEXT</b></p><ol>"+
+    emailNextSteps().map(x=>"<li>"+esc(x)+"</li>").join("")+"</ol>";
+
+  g.signoff = (S.email.note.trim() ? "<p>"+esc(S.email.note.trim()).replace(/\n/g,"<br>")+"</p>" : "")+
+    "<p>Any questions at all, just reply here or give me a call.</p>"+
+    "<p>Thanks,"+(agent?"<br>"+esc(agent):"")+"</p>";
+
+  return g;
 }
 
+const edits        = () => S.email.edits || (S.email.edits = {});
+const sectionEdited = k => Object.prototype.hasOwnProperty.call(edits(), k);
+const editedCount   = () => EMAIL_SECTIONS.filter(sectionEdited).length;
+function sectionHTML(k, gen){
+  return sectionEdited(k) ? edits()[k] : (gen || generatedSections())[k];
+}
+function generatedSubject(){
+  return "Your Medicare recommendation" + (A("clientFirst") ? " — "+A("clientFirst") : "");
+}
+const subjectEdited = () => typeof S.email.subject === "string";
+const currentSubject = () => subjectEdited() ? S.email.subject : generatedSubject();
+
+/* Plain text is read off the assembled HTML, so an edited section reads
+   exactly as the agent left it. */
+function htmlToText(html){
+  const d = document.createElement("div");
+  d.style.cssText = "position:absolute;left:-99999px;top:0;width:640px;white-space:pre-wrap";
+  d.innerHTML = html;
+  document.body.appendChild(d);
+  const t = d.innerText;
+  d.remove();
+  return t.replace(/\n{3,}/g,"\n\n").trim();
+}
+function currentEmail(){
+  const gen = generatedSections();
+  const html = EMAIL_SECTIONS.map(k=>sectionHTML(k,gen)).filter(Boolean).join("\n");
+  return { subject: currentSubject(), html, text: htmlToText(html), edited: editedCount()>0 || subjectEdited() };
+}
+/* kept for anything that wants the untouched version */
+function buildEmail(){
+  const gen = generatedSections();
+  const html = EMAIL_SECTIONS.map(k=>gen[k]).filter(Boolean).join("\n");
+  return { subject: generatedSubject(), html, text: htmlToText(html) };
+}
 
 /* ---------- the builder ---------- */
-/* Once the agent types into the panel it becomes the draft and stops
-   following the fields — otherwise the next premium they fix would wipe
-   their wording with no warning. */
-const hasDraft = () => !!(S.email.draft && S.email.draft.html);
-function currentEmail(){
-  const built = buildEmail();
-  return hasDraft()
-    ? { subject:S.email.draft.subject, html:S.email.draft.html, text:S.email.draft.text || built.text, edited:true }
-    : { ...built, edited:false };
-}
 function emailModalHTML(){
   const sc = emailScenario();
   const total = emailTotal();
-  const built = currentEmail();
+  const gen = generatedSections();
+  const nEdited = editedCount() + (subjectEdited()?1:0);
   return '<div class="em-head">'+
       '<div><h2>Build recommendation email</h2>'+
-      '<div class="em-sub">Filled in from this call. Change anything before you copy it.</div></div>'+
+      '<div class="em-sub">Filled in from this call. Edit any section — the rest keeps following the fields.</div></div>'+
       '<button class="tbtn" id="emClose">Close</button>'+
     "</div>"+
     '<div class="em-body">'+
@@ -2173,6 +2169,8 @@ function emailModalHTML(){
         "</div></div>"+
 
         '<div class="em-card"><h3>Anything to add</h3><div class="em-in">'+
+          '<div class="hint bad" id="emNoteWarn"'+(sectionEdited("signoff")?"":" hidden")+
+            ">The sign-off has been edited by hand, so this box no longer feeds it.</div>"+
           '<textarea id="emNote" placeholder="A line of your own — goes in just before the sign-off.">'+esc(S.email.note)+"</textarea>"+
         "</div></div>"+
       "</div>"+
@@ -2183,12 +2181,23 @@ function emailModalHTML(){
             '<button class="btn" id="emCopyRich">Copy for email</button>'+
             '<button class="btn ghost" id="emCopyText">Copy plain text</button>'+
           "</span></h3>"+
-          '<div class="em-edited" id="emEdited"'+(built.edited?"":" hidden")+'>'+
-            '<span>✎ You have edited this draft — the fields no longer update it.</span>'+
-            '<button class="btn ghost" id="emRebuild">Rebuild from fields</button></div>'+
-          '<div class="em-subject"><span>Subject</span>'+
-            '<input id="emSubject" value="'+esc(built.subject)+'"></div>'+
-          '<div class="em-out" id="emOut" contenteditable="true" spellcheck="true">'+built.html+"</div>"+
+          '<div class="em-edited" id="emEdited"'+(nEdited?"":" hidden")+'>'+
+            '<span>✎ <b id="emEditedN">'+nEdited+'</b> section'+(nEdited===1?"":"s")+
+            ' edited by hand — the rest still follows the fields.</span>'+
+            '<button class="btn ghost" id="emRebuild">Rebuild all</button></div>'+
+          '<div class="em-subject'+(subjectEdited()?" edited":"")+'">'+
+            '<span>Subject'+(subjectEdited()?' · edited <button class="em-mini" id="emResetSubject">reset</button>':"")+"</span>"+
+            '<input id="emSubject" value="'+esc(currentSubject())+'"></div>'+
+          '<div class="em-out" id="emOut">'+
+            EMAIL_SECTIONS.map(k=>{
+              const html = sectionHTML(k,gen), ed = sectionEdited(k);
+              const empty = !html || !html.trim();
+              return '<div class="em-secwrap'+(ed?" edited":"")+'"'+(empty&&!ed?" hidden":"")+'>'+
+                (ed ? '<button class="em-reset" data-emreset="'+k+'">↺ reset '+esc(SECTION_LABELS[k].toLowerCase())+"</button>" : "")+
+                '<div class="em-sec" data-emsec="'+k+'" contenteditable="true" spellcheck="true">'+html+"</div>"+
+              "</div>";
+            }).join("")+
+          "</div>"+
         "</div>"+
       "</div>"+
     "</div>";
@@ -2208,23 +2217,23 @@ function openEmail(){
 }
 function refreshEmail(){
   const el = document.getElementById("emailModal");
-  if(el && el.classList.contains("on")){
-    const panel = el.querySelector(".em-panel");
-    const keep = document.activeElement;
-    const k = keep && keep.dataset ? keep.dataset.emk : null;
-    const f = keep && keep.dataset ? keep.dataset.emf : null;
-    const pos = keep && typeof keep.selectionStart==="number" ? keep.selectionStart : null;
-    panel.innerHTML = emailModalHTML();
-    if(k && f){
-      const again = panel.querySelector('[data-emk="'+k+'"][data-emf="'+f+'"]');
-      if(again){ again.focus(); if(pos!=null){ try{ again.setSelectionRange(pos,pos); }catch(e){} } }
-    } else if(keep && (keep.id==="emNote" || keep.id==="emSubject")){
-      const again = panel.querySelector("#"+keep.id);
-      if(again){ again.focus(); if(pos!=null){ try{ again.setSelectionRange(pos,pos); }catch(e){} } }
-    } else if(keep && keep.id==="emOut"){
-      const again = panel.querySelector("#emOut");
-      if(again){ again.focus(); placeCaretAtEnd(again); }
-    }
+  if(!(el && el.classList.contains("on"))) return;
+  const panel = el.querySelector(".em-panel");
+  const keep = document.activeElement;
+  const k   = keep && keep.dataset ? keep.dataset.emk : null;
+  const f   = keep && keep.dataset ? keep.dataset.emf : null;
+  const sec = keep && keep.dataset ? keep.dataset.emsec : null;
+  const pos = keep && typeof keep.selectionStart==="number" ? keep.selectionStart : null;
+  panel.innerHTML = emailModalHTML();
+  if(k && f){
+    const again = panel.querySelector('[data-emk="'+k+'"][data-emf="'+f+'"]');
+    if(again){ again.focus(); if(pos!=null){ try{ again.setSelectionRange(pos,pos); }catch(e){} } }
+  } else if(keep && (keep.id==="emNote" || keep.id==="emSubject")){
+    const again = panel.querySelector("#"+keep.id);
+    if(again){ again.focus(); if(pos!=null){ try{ again.setSelectionRange(pos,pos); }catch(e){} } }
+  } else if(sec){
+    const again = panel.querySelector('[data-emsec="'+sec+'"]');
+    if(again){ again.focus(); placeCaretAtEnd(again); }
   }
 }
 function closeEmail(){
@@ -2233,38 +2242,70 @@ function closeEmail(){
   document.body.style.overflow = "";
 }
 
-/* Save whatever is on screen as the draft. */
-function captureDraft(){
-  const out = document.getElementById("emOut");
-  if(!out) return;
-  const subj = document.getElementById("emSubject");
-  const wasClean = !hasDraft();
-  S.email.draft = {
-    subject: subj ? subj.value : buildEmail().subject,
-    html: out.innerHTML,
-    text: out.innerText.replace(/\n{3,}/g,"\n\n").trim()
-  };
+/* An edit claims only the section it happened in. */
+function captureSection(el){
+  const k = el.dataset.emsec;
+  if(!k) return;
+  const first = !sectionEdited(k);
+  edits()[k] = el.innerHTML;
   save();
-  /* Reveal the banner in place. Redrawing the card here would move the caret
-     to the end of the document on the agent's first keystroke. */
-  if(wasClean){
-    const b = document.getElementById("emEdited");
-    if(b) b.hidden = false;
+  if(first) markSectionEdited(k);
+}
+/* Reveal the markers in place — redrawing here would throw the caret to the
+   end of the document on the agent's first keystroke. */
+function markSectionEdited(k){
+  const wrap = document.querySelector('[data-emsec="'+k+'"]')?.closest(".em-secwrap");
+  if(wrap && !wrap.querySelector(".em-reset")){
+    wrap.classList.add("edited");
+    const btn = document.createElement("button");
+    btn.className = "em-reset";
+    btn.dataset.emreset = k;
+    btn.textContent = "↺ reset "+SECTION_LABELS[k].toLowerCase();
+    wrap.insertBefore(btn, wrap.firstChild);
   }
+  updateEditedBanner();
+  syncNoteWarning();
+}
+function syncNoteWarning(){
+  const w = document.getElementById("emNoteWarn");
+  if(w) w.hidden = !sectionEdited("signoff");
+}
+function updateEditedBanner(){
+  const n = editedCount() + (subjectEdited()?1:0);
+  const b = document.getElementById("emEdited");
+  if(!b) return;
+  b.hidden = n===0;
+  const span = b.querySelector("span");
+  if(span) span.innerHTML = "✎ <b>"+n+"</b> section"+(n===1?"":"s")+
+    " edited by hand — the rest still follows the fields.";
+}
+function resetSection(k){
+  delete edits()[k];
+  save(); refreshEmail();
 }
 function rebuildFromFields(){
-  if(hasDraft() && !confirm("Rebuild the email from the fields? Your edits will be discarded.")) return;
-  S.email.draft = null; save(); refreshEmail();
+  if((editedCount() || subjectEdited()) &&
+     !confirm("Rebuild the whole email from the fields? Every edit will be discarded.")) return;
+  S.email.edits = {}; S.email.subject = null;
+  save(); refreshEmail();
 }
 
-/* only the preview needs repainting while the agent types in the fields */
+/* A field change repaints only the sections the agent has not claimed. */
 function repaintPreview(){
   const out = document.getElementById("emOut");
-  if(!out || hasDraft()) return;      /* the draft is the agent's now */
-  const built = buildEmail();
-  out.innerHTML = built.html;
+  if(!out) return;
+  const gen = generatedSections();
+  EMAIL_SECTIONS.forEach(k=>{
+    if(sectionEdited(k)) return;
+    const el = out.querySelector('[data-emsec="'+k+'"]');
+    if(!el) return;
+    const html = gen[k] || "";
+    if(el.innerHTML !== html) el.innerHTML = html;
+    const wrap = el.closest(".em-secwrap");
+    if(wrap) wrap.hidden = !html.trim();
+  });
   const subj = document.getElementById("emSubject");
-  if(subj && document.activeElement!==subj) subj.value = built.subject;
+  if(subj && !subjectEdited() && document.activeElement!==subj) subj.value = generatedSubject();
   const tot = document.querySelector(".em-total");
   const t = emailTotal();
   if(tot) tot.innerHTML = t>0 ? "Total <b>"+money(t)+"</b> a month" : "";
@@ -2274,6 +2315,9 @@ document.addEventListener("click", e => {
   if(e.target.id==="btnEmail"){ openEmail(); return; }
   if(e.target.id==="emClose"){ closeEmail(); return; }
   if(e.target.id==="emailModal"){ closeEmail(); return; }   /* click the backdrop */
+  const reset = e.target.closest("[data-emreset]");
+  if(reset){ resetSection(reset.dataset.emreset); return; }
+  if(e.target.id==="emResetSubject"){ S.email.subject=null; save(); refreshEmail(); return; }
   const tick = e.target.closest("[data-emprod]");
   if(tick){
     const k = tick.dataset.emprod;
@@ -2293,7 +2337,8 @@ document.addEventListener("input", e => {
     save(); repaintPreview(); return;
   }
   if(el.id==="emNote"){ S.email.note = el.value; save(); repaintPreview(); return; }
-  if(el.id==="emOut" || el.id==="emSubject"){ captureDraft(); }
+  if(el.id==="emSubject"){ S.email.subject = el.value; save(); updateEditedBanner(); return; }
+  if(el.dataset && el.dataset.emsec){ captureSection(el); }
 });
 document.addEventListener("change", e => {
   if(e.target.id==="emScenario"){
@@ -2304,13 +2349,13 @@ document.addEventListener("keydown", e => {
   if(e.key==="Escape" && document.getElementById("emailModal")?.classList.contains("on")) closeEmail();
 });
 
-/* Rich copy keeps the headings and bullets when pasted into a mail client. */
 function placeCaretAtEnd(el){
   try{
     const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
     const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
   }catch(e){}
 }
+/* Rich copy keeps the headings and bullets when pasted into a mail client. */
 async function copyRich(btn){
   const built = currentEmail();
   try{
