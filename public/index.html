@@ -1135,7 +1135,7 @@ const STEPS = [
     {t:"do", text:"Wait for the response."},
     {t:"field", k:"snfHistory", label:"Skilled nursing history / familiarity", type:"textarea",
       ph:"Their experience and how much they already understand.", w:"lg"},
-    {t:"say", text:"Really what you need to know is, Medicare will help cover up to day 100 as long as you had a <b>3 day hospital stay</b> and are <b>showing signs of improvement</b>… but after day 100 you are responsible for all costs. <span class='q'>So I'm assuming this will be a concern as well?</span>"},
+    {t:"say", text:"Really what you need to know is Medicare will help cover up to day 100 as long as you had a <b>3 day hospital stay</b> and are <b>showing signs of improvement</b>… but after day 100 you are responsible for all costs. <span class='q'>So I'm assuming this will be a concern as well?</span>"},
     {t:"do", text:"Wait for the response."},
     {t:"choice", k:"snfConcern", label:"Is skilled nursing a concern for them?", opts:[
       {v:"yes", l:"Yes — it's a concern", sub:()=> isEmployerTrack() ? "" : "+$50 Supplement · +$100 Advantage"},
