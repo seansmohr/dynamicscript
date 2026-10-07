@@ -930,6 +930,13 @@ const STEPS = [
       text:"<b>Parts A &amp; B are active.</b> The already-on-Medicare script is paused while it's rewritten — skip the needs assessment. The next step is a short holding step to wrap the call."}
   ]},
 
+{ id:"cna-intro", sec:"Opening", title:"Transition into the needs assessment",
+  skip:()=> !runsCNA(),
+  blocks:[
+    {t:"say", text:"Perfect. So what I'd like to do now is take you through what's called a <b>Client Needs Assessment</b>. That way I can better understand your situation, and by the end of the call I'll be able to make a recommendation for you. <span class='q'>Is that okay with you?</span>"},
+    {t:"do", text:"Wait for their yes."}
+  ]},
+
 /* Holding step while the already-on-Medicare script is rewritten. */
 { id:"m4-paused", sec:"Close", title:"Already on Medicare — script paused",
   sub:"There's no script for clients already on Medicare in this version. Capture the basics, book the follow-up, and wrap.",
