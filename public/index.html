@@ -1757,6 +1757,8 @@ const STEPS = [
       ? "Now that we've gone over the benefits, let's talk about cost."
       : "Now that we've gone over the benefits of both plans, let's talk about cost."},
     {t:"cablock"},
+    {t:"do", text:"Enter the premiums first — the quote below fills itself in."},
+    {t:"priceinputs"},
     {t:"say", if:()=>!earlyLean(), text:()=>quoteSay("supp", true)},
     {t:"do",  if:()=>!earlyLean(), text:"Give them time to write it down."},
     {t:"say", if:()=>!earlyLean(), text:()=>quoteSay("ma", true)},
@@ -2471,6 +2473,7 @@ function renderBlock(b){
     case "goals":  return goalsHTML();
     case "umbrella":  return '<div class="b">'+umbrellaHTML(false)+"</div>";
     case "pricing":   return pricingHTML();
+    case "priceinputs": return priceInputsHTML();
     case "chsTiers":  return chsTiersHTML();
     case "threesteps":return threeStepsHTML();
     case "readback":  return readbackHTML();
@@ -2624,6 +2627,14 @@ function umbrellaHTML(compact){
     "</div></div>";
 }
 /* ---- pricing ---- */
+/* The premiums go in before the quote is read, so the quote is complete. */
+function priceInputsHTML(){
+  return '<div class="b"><div class="frow">'+
+    fieldHTML({k:"planGPremium", label:"Supplement (Plan G) / mo", ph:"$", w:"md"})+
+    fieldHTML({k:"partDPremium", label:"PDP / mo", ph:"$10", w:"sm"})+
+    fieldHTML({k:"mapdPremium",  label:"MAPD / mo", ph:"$0", w:"sm"})+
+    "</div></div>";
+}
 function pricingHTML(){
   const side = (kind, title, total, foot) => {
     const again = kind==="ma" && !earlyLean();
@@ -2636,11 +2647,6 @@ function pricingHTML(){
       '<div style="font-size:13px;color:var(--ink-3);margin-top:4px">'+foot+"</div></div>";
   };
   return '<div class="b">'+
-    '<div class="frow" style="margin-bottom:16px">'+
-      fieldHTML({k:"planGPremium", label:"Supplement (Plan G) / mo", ph:"$", w:"sm"})+
-      fieldHTML({k:"partDPremium", label:"PDP / mo", ph:"$10", w:"sm"})+
-      fieldHTML({k:"mapdPremium",  label:"MAPD / mo", ph:"$0", w:"sm"})+
-    "</div>"+
     umbrellaHTML(false)+
     '<div class="ucols" style="margin-top:16px">'+
       side("supp","Medicare Supplement", suppTotal(), "$283 annual deductible, then $0 for covered services.")+
