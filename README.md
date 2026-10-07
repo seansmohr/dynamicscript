@@ -100,8 +100,8 @@ so those clients run the T65 track. The agent can override the route on the CNA 
   the other?"* Leaning Supplement gets the two-sentence Part A & B summary and the
   Supplement education only; leaning Advantage gets the summary and the Advantage
   education only; not familiar gets both, plus the line-down-the-middle paper exercise.
-  Not familiar writes both quotes and is asked the leaning question again; leaning one
-  way writes only that side's quote and just confirms.
+  Not familiar hears both prices and is asked the leaning question again; leaning one
+  way hears only that side's price and just confirms.
   Closes on Scenario A (not on SS) or B (on SS).
 
 ### Already on Medicare — paused
@@ -132,15 +132,17 @@ Gold / Silver / Bronze ($150 / $100 / $50) instead.
 Dental only prices into the Supplement side, because an Advantage plan already bundles it.
 Under the California restriction only the dental component survives, and the override is switched off.
 
-The client writes the quote down piece by piece, then the one price:
+The agent works the price out on the pricing step before talking cost:
 
-- **Supplement side** = Supplement + PDP (≈ $10) + CHS + RC + Dental
-- **Advantage side** = MAPD (usually $0) + CHS + RC
+- **Supplement** = Supplement (Plan G) + PDP (≈ $10) + CHS + RC + Dental
+- **Advantage** = MAPD (usually $0) + CHS + RC
 
 CHS is the cancer / heart attack / stroke piece and RC (recovery care) is the skilled
-nursing piece. Only the pieces flagged in the needs assessment are written, so the paper
-always adds up. A client who leaned one way at the start of education writes only that
-side, and the leaning question becomes a confirmation.
+nursing piece; only the pieces flagged in the needs assessment are added. The agent
+then says one line per option — "For your Medicare Supplement with umbrella, this will
+be $X a month" — dropping "with umbrella" when there is none. A client who leaned one
+way at the start of education is only quoted that side, and the leaning question
+becomes a confirmation.
 
 Both totals stay on screen from the moment the concerns are captured, so the number is
 already computed when the agent reaches the pricing section. The agent can override

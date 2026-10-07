@@ -782,10 +782,10 @@ function recommendedUmbrella(){
   return l==="ma" ? umbrella("ma").value : umbrella("supp").value;
 }
 
-/* ---- the written quote ------------------------------------------------
-   The client writes each piece by name, then the one price. Pieces they
-   didn't flag in the needs assessment, or can't be sold (CA 65+), are left
-   out, so what is on their paper always adds up to the number we quote.  */
+/* ---- the quote, piece by piece -----------------------------------------
+   Shown to the agent as a calculation before they say the price. Pieces
+   the client didn't flag in the needs assessment, or that can't be sold
+   (CA 65+), are left out, so the pieces always add up to the price.     */
 function quotePieces(kind, again){
   const u = umbrella(kind), on = k => u.rows.some(r=>r.k===k && r.on && r.amt>0);
   const P = [];
@@ -802,14 +802,11 @@ function quotePieces(kind, again){
   if(on("dentalImport")) P.push({code:"Dental", why:"this is your dental coverage", amt:50});
   return P;
 }
-function quoteSay(kind, sided){
-  const again = kind==="ma" && !earlyLean();     // CHS was already explained on the Supplement side
-  const pieces = quotePieces(kind, again).map(x=>"<b>"+x.code+"</b>"+(x.why?" <i>("+x.why+")</i>":"")).join(" + ");
-  const total = kind==="supp" ? "{suppTotal}" : "{maTotal}";
-  const lead = sided
-    ? "On the <b>Medicare "+(kind==="supp"?"Supplement":"Advantage")+"</b> side, I want you to write "
-    : "I want you to write ";
-  return lead+pieces+" = <b>"+total+" a month</b>.";
+/* What the agent says: the plan, "with umbrella" only when there is one, the price. */
+function quoteSay(kind){
+  const plan = kind==="supp" ? "Medicare Supplement" : "Medicare Advantage";
+  const umb  = umbrella(kind).value>0 ? " with umbrella" : "";
+  return "For your <b>"+plan+umb+"</b>, this will be <b>"+(kind==="supp"?"{suppTotal}":"{maTotal}")+" a month</b>.";
 }
 
 /* ============================================================
@@ -1747,28 +1744,24 @@ const STEPS = [
   ]},
 
 /* ================= 8. PRICING ================= */
-{ id:"pricing", sec:"Pricing", title:"Pricing — write the quote down",
+{ id:"pricing", sec:"Pricing", title:"Pricing",
   skip:()=> !isT65(),
   sub:()=> earlyLean()
-    ? "They leaned "+(earlyLean()==="supp"?"Supplement":"Advantage")+" at the start of education, so they only write that side down."
-    : "They write both sides down, one piece at a time, then the one price.",
+    ? "They leaned "+(earlyLean()==="supp"?"Supplement":"Advantage")+" at the start of education, so only that side is quoted."
+    : "Work out both prices first, then quote them.",
   blocks:[
+    {t:"do", text:"Enter the premiums and check the calculation <b>before</b> you start talking price."},
+    {t:"priceinputs"},
+    {t:"pricecalc"},
+    {t:"warn", if:()=>umbrella("supp").overridden || umbrella("ma").overridden,
+      text:"An umbrella override is set, so the pieces won't add up to the total. Clear it on the skilled nursing step, or check the price by hand."},
+    {t:"do", if:()=>caRestricted(),
+      text:"California, 65 or older — CHS and RC can't be sold, so they're left out. Dental is the only add-on left, and only on the Supplement side."},
     {t:"say", text:()=> earlyLean()
       ? "Now that we've gone over the benefits, let's talk about cost."
       : "Now that we've gone over the benefits of both plans, let's talk about cost."},
-    {t:"cablock"},
-    {t:"do", text:"Enter the premiums first — the quote below fills itself in."},
-    {t:"priceinputs"},
-    {t:"say", if:()=>!earlyLean(), text:()=>quoteSay("supp", true)},
-    {t:"do",  if:()=>!earlyLean(), text:"Give them time to write it down."},
-    {t:"say", if:()=>!earlyLean(), text:()=>quoteSay("ma", true)},
-    {t:"say", if:()=>earlyLean()==="supp", text:()=>quoteSay("supp", false)},
-    {t:"say", if:()=>earlyLean()==="ma",   text:()=>quoteSay("ma", false)},
-    {t:"do", text:"Give them time to write it down."},
-    {t:"warn", if:()=>umbrella("supp").overridden || umbrella("ma").overridden,
-      text:"An umbrella override is set, so the pieces won't add up to this price. Clear it on the skilled nursing step, or quote the pieces by hand."},
-    {t:"do", if:()=>caRestricted(),
-      text:"California, 65 or older — CHS and RC can't be sold, so they're left off the quote. Dental is the only add-on left, and only on the Supplement side."}
+    {t:"say", if:()=>earlyLean()!=="ma",   text:()=>quoteSay("supp")},
+    {t:"say", if:()=>earlyLean()!=="supp", text:()=>quoteSay("ma")}
   ]},
 
 { id:"lean", sec:"Pricing", title:"Which option are they leaning toward?",
@@ -1778,7 +1771,7 @@ const STEPS = [
       text:"Now that we've gone through both options and the detailed pricing breakdown, which route do you feel yourself leaning toward as of now?"},
     {t:"do", if:()=>!earlyLean(), text:"<b>PAUSE.</b> Let them answer."},
     {t:"do", if:()=>!!earlyLean(),
-      text:"They leaned this way at the start of education and only priced this side — just confirm it. If they've changed their mind, pick the other option and give them that quote from the pricing step."},
+      text:"They leaned this way at the start of education and only heard this price — just confirm it. If they've changed their mind, pick the other option and give them that price from the pricing step."},
     {t:"choice", k:"leaning", val:leanPick, label:"Which way are they leaning?", opts:[
       {v:"supp", l:"Medicare Supplement"},
       {v:"ma",   l:"Medicare Advantage"},
@@ -2474,6 +2467,7 @@ function renderBlock(b){
     case "goals":  return goalsHTML();
     case "umbrella":  return '<div class="b">'+umbrellaHTML(false)+"</div>";
     case "priceinputs": return priceInputsHTML();
+    case "pricecalc":   return priceCalcHTML();
     case "chsTiers":  return chsTiersHTML();
     case "threesteps":return threeStepsHTML();
     case "readback":  return readbackHTML();
@@ -2628,11 +2622,24 @@ function umbrellaHTML(compact){
 }
 /* ---- pricing ---- */
 /* The premiums go in before the quote is read, so the quote is complete. */
+function priceCalcHTML(){
+  const lean = earlyLean();
+  const side = (kind, title, total) => {
+    const rows = quotePieces(kind, false).map(x=>"<tr><td>"+esc(x.code)+"</td><td>"+money(x.amt)+"</td></tr>").join("");
+    return '<div class="ucol"><h5>'+title+'</h5><table class="utab">'+rows+
+      '<tr class="tot"><td>Total</td><td>'+money(total)+"</td></tr></table></div>";
+  };
+  const cols = [];
+  if(lean!=="ma")   cols.push(side("supp","Medicare Supplement", suppTotal()));
+  if(lean!=="supp") cols.push(side("ma","Medicare Advantage", maTotal()));
+  return '<div class="b"><div class="ucols"'+(cols.length===1?' style="grid-template-columns:1fr;max-width:420px"':"")+'>'+cols.join("")+"</div></div>";
+}
 function priceInputsHTML(){
+  const lean = earlyLean();
   return '<div class="b"><div class="frow">'+
-    fieldHTML({k:"planGPremium", label:"Supplement (Plan G) / mo", ph:"$", w:"md"})+
-    fieldHTML({k:"partDPremium", label:"PDP / mo", ph:"$10", w:"sm"})+
-    fieldHTML({k:"mapdPremium",  label:"MAPD / mo", ph:"$0", w:"sm"})+
+    (lean!=="ma" ? fieldHTML({k:"planGPremium", label:"Supplement (Plan G) / mo", ph:"$", w:"md"})+
+                   fieldHTML({k:"partDPremium", label:"PDP / mo", ph:"$10", w:"sm"}) : "")+
+    (lean!=="supp" ? fieldHTML({k:"mapdPremium", label:"MAPD / mo", ph:"$0", w:"sm"}) : "")+
     "</div></div>";
 }
 /* ---- employer CHS tiers ---- */
