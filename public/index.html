@@ -1764,10 +1764,11 @@ const STEPS = [
     {t:"say", if:()=>!earlyLean(), text:()=>quoteSay("ma", true)},
     {t:"say", if:()=>earlyLean()==="supp", text:()=>quoteSay("supp", false)},
     {t:"say", if:()=>earlyLean()==="ma",   text:()=>quoteSay("ma", false)},
-    {t:"do", text:"Give them time to write it down. Only the pieces they flagged in the needs assessment are on it, so it always adds up to the price."},
+    {t:"do", text:"Give them time to write it down."},
+    {t:"warn", if:()=>umbrella("supp").overridden || umbrella("ma").overridden,
+      text:"An umbrella override is set, so the pieces won't add up to this price. Clear it on the skilled nursing step, or quote the pieces by hand."},
     {t:"do", if:()=>caRestricted(),
-      text:"California, 65 or older — CHS and RC can't be sold, so they're left off the quote. Dental is the only add-on left, and only on the Supplement side."},
-    {t:"pricing"}
+      text:"California, 65 or older — CHS and RC can't be sold, so they're left off the quote. Dental is the only add-on left, and only on the Supplement side."}
   ]},
 
 { id:"lean", sec:"Pricing", title:"Which option are they leaning toward?",
@@ -2472,7 +2473,6 @@ function renderBlock(b){
     case "choice": return choiceHTML(b);
     case "goals":  return goalsHTML();
     case "umbrella":  return '<div class="b">'+umbrellaHTML(false)+"</div>";
-    case "pricing":   return pricingHTML();
     case "priceinputs": return priceInputsHTML();
     case "chsTiers":  return chsTiersHTML();
     case "threesteps":return threeStepsHTML();
@@ -2633,24 +2633,6 @@ function priceInputsHTML(){
     fieldHTML({k:"planGPremium", label:"Supplement (Plan G) / mo", ph:"$", w:"md"})+
     fieldHTML({k:"partDPremium", label:"PDP / mo", ph:"$10", w:"sm"})+
     fieldHTML({k:"mapdPremium",  label:"MAPD / mo", ph:"$0", w:"sm"})+
-    "</div></div>";
-}
-function pricingHTML(){
-  const side = (kind, title, total, foot) => {
-    const again = kind==="ma" && !earlyLean();
-    const rows = quotePieces(kind, again).map(x=>"<tr><td>"+esc(x.code)+"</td><td>"+money(x.amt)+"</td></tr>").join("");
-    const u = umbrella(kind);
-    const lean = earlyLean(), dim = lean && lean!==kind;
-    return '<div class="ucol"'+(dim?' style="opacity:.55"':"")+'><h5>👉 '+title+(dim?" · not quoted":"")+'</h5><table class="utab">'+rows+
-      '<tr class="tot"><td>= the price</td><td>'+money(total)+"</td></tr></table>"+
-      (u.overridden ? '<div class="b warn" style="margin:8px 0 0"><span class="ic">⚠</span><span>Umbrella override is on — the pieces no longer add up to this price. Reset it or quote the pieces by hand.</span></div>' : "")+
-      '<div style="font-size:13px;color:var(--ink-3);margin-top:4px">'+foot+"</div></div>";
-  };
-  return '<div class="b">'+
-    umbrellaHTML(false)+
-    '<div class="ucols" style="margin-top:16px">'+
-      side("supp","Medicare Supplement", suppTotal(), "$283 annual deductible, then $0 for covered services.")+
-      side("ma","Medicare Advantage", maTotal(), "Small copays for doctor and specialist visits.")+
     "</div></div>";
 }
 /* ---- employer CHS tiers ---- */
