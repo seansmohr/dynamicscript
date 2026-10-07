@@ -114,6 +114,15 @@ The on-Medicare email scenarios are hidden too.
 The old branch 4A / 4B is still in `public/index.html`, dormant, gated on
 `MEDICARE_TRACK_LIVE`. Set it to `true` to bring it back exactly as it was.
 
+### The formal recommendation
+
+After "Can I make a recommendation for you?", the T65 recommendation is written for the
+agent from the call: their goals quoted back in their own words, why the plan they're
+leaning toward fits (tied to any goal about doctors, cost, prescriptions, dental/vision/
+hearing or understanding their options), one sentence per umbrella piece they selected,
+then the plan and price. It is rule-based — the same answers always produce the same
+words — and updates live as the call changes.
+
 ## Umbrella pricing
 
 Three answers in the needs assessment price the umbrella. Nothing else touches it.

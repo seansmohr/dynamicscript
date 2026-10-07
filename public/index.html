@@ -802,6 +802,62 @@ function quotePieces(kind, again){
   if(on("dentalImport")) P.push({code:"Dental", why:"this is your dental coverage", amt:50});
   return P;
 }
+/* ---- the rationale for the formal recommendation ----------------------
+   Built from the call, by rule: their goals in their own words, why the plan
+   they're leaning toward fits (tied to any goal that names doctors, cost,
+   prescriptions, dental/vision/hearing or understanding their options), then
+   one sentence per umbrella piece they selected. Same answers, same words. */
+const GOAL_TOPICS = [
+  {k:"doctors", re:/doctor|physician|specialist|network|hospital|freedom|travel|anywhere|referral/i,
+   supp:"Keeping your doctors matters to you, and with a Supplement you can see any doctor in the country who takes Medicare.",
+   ma:"Keeping your doctors matters to you, so we'll make sure they're in the plan's network before you enroll."},
+  {k:"cost", re:/cost|cheap|afford|price|premium|budget|sav(e|ing)|money|expens|bill|out of pocket|oop/i,
+   supp:"Keeping your costs predictable matters to you, and that means no surprise bills for Medicare-approved care.",
+   ma:"Keeping your costs down matters to you, and beyond that low premium you'll just have small copays for doctor and specialist visits."},
+  {k:"drugs", re:/drug|prescription|\brx\b|medication|meds|pharmac/i,
+   supp:"Your prescriptions are covered through the separate drug plan.",
+   ma:"So the medications you mentioned are covered without a separate drug plan."},
+  {k:"dvh", re:/dental|teeth|vision|eye|glasses|hearing/i,
+   supp:null,
+   ma:"Dental, vision and hearing come built into the plan."},
+  {k:"understand", re:/understand|learn|explain|option|figure|confus|question|know|educat|clarity|overview/i,
+   supp:"And now that we've walked through how it all works, you can see why this one fits.",
+   ma:"And now that we've walked through how it all works, you can see why this one fits."}
+];
+const PLAN_WHY = {
+  supp:"it's the more comprehensive option — no networks, no prior authorizations, no referrals — and once you meet the $283 deductible, your Medicare-approved expenses are covered",
+  ma:"it's your all-in-one plan — your health coverage, your prescriptions, and dental, vision and hearing together, usually for a $0 premium"
+};
+function rationaleHTML(){
+  const kind = leanPick();
+  const quote = g => "“"+esc(g).replace(/[{}]/g,"")+"”";
+  const out = [];
+  const gs = S.goals.filter(g=>String(g).trim());
+  const glist = gs.length<2 ? gs.map(quote).join("")
+    : gs.slice(0,-1).map(quote).join(", ")+" and "+quote(gs[gs.length-1]);
+  const plan = "<b>"+(kind==="supp"?"Medicare Supplement":"Medicare Advantage")+"</b>";
+  const tied = GOAL_TOPICS.filter(t=> t[kind] && gs.some(g=>t.re.test(g))).map(t=>t[kind]);
+  const why = PLAN_WHY[kind]+"."+(tied.length ? " "+tied.join(" ") : "");
+  if(gs.length){
+    out.push("Based on everything you shared today — you told me what you wanted out of today: <b>"+glist+"</b>.");
+    out.push("That's why the "+plan+" makes sense for you: "+why);
+  } else {
+    out.push("Based on everything you shared today, the "+plan+" makes sense for you: "+why);
+  }
+
+  const u = umbrella(kind), on = k => u.rows.some(r=>r.k===k && r.on && r.amt>0);
+  const umb = [];
+  if(on("chsConcern")) umb.push("You also shared your history with cancer, heart attack and stroke, and that you don't want to be exposed to those out-of-pocket costs — that's what the cancer, heart attack and stroke coverage is for.");
+  if(on("snfConcern")) umb.push((umb.length?"And s":"S")+"ince Medicare stops paying for skilled nursing after day 100, the recovery care covers that gap.");
+  if(on("dentalImport")) umb.push("Dental matters to you, so dental coverage is included as well.");
+  if(umb.length) out.push(umb.join(" "));
+
+  out.push(u.value>0
+    ? "So my formal recommendation would be the <b>{planType}</b>, with "+(caRestricted()?"dental ":"")+"umbrella coverage for about <b>{umbPrice} a month</b>."
+    : "So my formal recommendation would be the <b>{planType}</b>, at about <b>{planTotal} a month</b>.");
+  return out.join("<br><br>");
+}
+
 /* What the agent says: the plan, "with umbrella" only when there is one, the price. */
 function quoteSay(kind){
   const plan = kind==="supp" ? "Medicare Supplement" : "Medicare Advantage";
@@ -1789,15 +1845,17 @@ const STEPS = [
   blocks:[
     {t:"say", text:"<span class='q'>Can I make a recommendation for you?</span>"},
     {t:"do", text:"Wait for their yes before you go into the recommendation."},
-    {t:"do", text:"Read their goals and notes back to them <b>in their own words</b> before you make the recommendation. The panel below is your read-back."},
-    {t:"readback"},
-    {t:"say", if:()=>recommendedUmbrella()>0,
-      text:()=>"Based on everything you shared today — <i>(read back your notes from the call)</i> — my formal recommendation would be the <b>{planType}</b>, with "+
-        (caRestricted()?"dental ":"")+"umbrella coverage for about <b>{umbPrice} a month</b>."},
-    {t:"do", if:()=>recommendedUmbrella()>0,
-      text:"All in, that's <b>{planTotal} a month</b> — the one price you quoted in pricing."},
-    {t:"say", if:()=>recommendedUmbrella()<=0,
-      text:"Based on everything you shared today — <i>(read back your notes from the call)</i> — my formal recommendation would be the <b>{planType}</b>, at about <b>{planTotal} a month</b>."},
+    {t:"do", if:()=>!["supp","ma"].includes(leanPick()),
+      text:"Record which way they're leaning on the previous step — the recommendation is built from it."},
+    {t:"do", if:()=>!S.goals.length,
+      text:"No goals were captured in the opening, so there's nothing to read back. Add them on the goals step if they gave you any."},
+    {t:"say", if:()=>["supp","ma"].includes(leanPick()), text:()=>rationaleHTML()},
+    {t:"do", if:()=>["supp","ma"].includes(leanPick()) && !!(A("chsHistory")||A("snfHistory")),
+      text:()=>"Their own words, if you want to use them — "+
+        [A("chsHistory")?"cancer / heart / stroke: <i>"+esc(A("chsHistory")).replace(/[{}]/g,"")+"</i>":"",
+         A("snfHistory")?"skilled nursing: <i>"+esc(A("snfHistory")).replace(/[{}]/g,"")+"</i>":""].filter(Boolean).join(" · ")},
+    {t:"do", if:()=>["supp","ma"].includes(leanPick()) && recommendedUmbrella()>0,
+      text:"All in, that's <b>{planTotal} a month</b> — the price you quoted in pricing."},
     {t:"do", text:"<b>PAUSE. The first one to talk loses.</b>"}
   ]},
 
