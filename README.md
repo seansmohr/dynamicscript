@@ -123,6 +123,14 @@ hearing or understanding their options), one sentence per umbrella piece they se
 then the plan and price. It is rule-based — the same answers always produce the same
 words — and updates live as the call changes.
 
+### The 3 simple steps — timeline
+
+Each T65 step carries a date: step 1 is today; step 2 is a second appointment two days
+out, or the 1st of the month three months before their 65th-birthday month if their
+enrollment window hasn't opened yet; step 3 is 15 days after step 2, so their Medicare
+card has arrived. The agent can type the appointment they actually booked over the
+step 2 default, and step 3 moves with it.
+
 ## Umbrella pricing
 
 Three answers in the needs assessment price the umbrella. Nothing else touches it.

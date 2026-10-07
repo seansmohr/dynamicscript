@@ -538,7 +538,8 @@ const reachesPricing  = () => !isEmployerTrack();
    midnight and reads back as the previous day in every US time zone.     */
 const DATE_RULES = {
   dob:           {label:"Date of birth",  minYear:1900, maxYear:()=>new Date().getFullYear(), allowFuture:false},
-  effectiveDate: {label:"Effective date", minYear:()=>new Date().getFullYear()-1, maxYear:()=>new Date().getFullYear()+10, allowFuture:true}
+  effectiveDate: {label:"Effective date", minYear:()=>new Date().getFullYear()-1, maxYear:()=>new Date().getFullYear()+10, allowFuture:true},
+  step2Date:     {label:"Second appointment", minYear:()=>new Date().getFullYear()-1, maxYear:()=>new Date().getFullYear()+10, allowFuture:true}
 };
 const ruleFor = k => DATE_RULES[k] || DATE_RULES.dob;
 const ruleVal = v => typeof v==="function" ? v() : v;
@@ -635,6 +636,26 @@ function birthMonthName(){
   return ["January","February","March","April","May","June","July",
           "August","September","October","November","December"][b.getMonth()];
 }
+
+/* ---- the 3-step timeline ------------------------------------------------
+   Step 1 is today. Step 2 is the second appointment for Parts A & B: two
+   days out, or — if their enrollment window hasn't opened yet — the 1st of
+   the month three months before their 65th-birthday month. Step 3 is 15
+   days after step 2, so their Medicare card has arrived. The agent can type
+   the appointment they actually booked over the step 2 default.          */
+const fmtMDY = d => { const p = n => String(n).padStart(2,"0"); return p(d.getMonth()+1)+"/"+p(d.getDate())+"/"+d.getFullYear(); };
+const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+const today0 = () => { const t = new Date(); t.setHours(0,0,0,0); return t; };
+function windowOpens(){
+  const b = dobDate(); if(!b) return null;
+  return new Date(b.getFullYear()+65, b.getMonth()-3, 1);
+}
+function step2Auto(){
+  const soon = addDays(today0(), 2), w = windowOpens();
+  return (w && w > soon) ? w : soon;
+}
+const step2Day = () => dateStatus("step2Date").state==="ok" ? parseMDY(A("step2Date")) : step2Auto();
+const step3Day = () => addDays(step2Day(), 15);
 
 /* ---- California ancillary rule ----------------------------------------
    65 or older in California means no ancillary product may be pitched —
@@ -816,7 +837,7 @@ const GOAL_TOPICS = [
    ma:"Keeping your doctors matters to you, so we'll make sure they're in the plan's network before you enroll."},
   {k:"cost", re:/cost|cheap|afford|price|premium|budget|sav(e|ing)|money|expens|bill|out of pocket|oop/i,
    supp:"Keeping your costs predictable matters to you, and that means no surprise bills for Medicare-approved care.",
-   ma:"Keeping your costs down matters to you, and beyond that low premium you'll just have small copays for doctor and specialist visits."},
+   ma:"Keeping your costs down matters to you, and with an Advantage plan you'll just have small copays for doctor and specialist visits."},
   {k:"drugs", re:/drug|prescription|\brx\b|medication|meds|pharmac/i,
    supp:"Your prescriptions are covered through the separate drug plan.",
    ma:"So the medications you mentioned are covered without a separate drug plan."},
@@ -829,7 +850,7 @@ const GOAL_TOPICS = [
 ];
 const PLAN_WHY = {
   supp:"it's the more comprehensive option — no networks, no prior authorizations, no referrals — and once you meet the $283 deductible, your Medicare-approved expenses are covered",
-  ma:"it's your all-in-one plan — your health coverage, your prescriptions, and dental, vision and hearing together, usually for a $0 premium"
+  ma:"it's your all-in-one plan — your health coverage, your prescriptions, and dental, vision and hearing together"
 };
 function rationaleHTML(){
   const kind = leanPick();
@@ -858,7 +879,7 @@ function rationaleHTML(){
   if(umb.length) out.push(umb.join(" "));
 
   out.push(u.value>0
-    ? "So my formal recommendation would be the <b>{planType}</b>, with "+(caRestricted()?"dental ":"")+"umbrella coverage for about <b>{umbPrice} a month</b>."
+    ? "So my formal recommendation would be the <b>{planType}</b>, with "+(caRestricted()?"dental ":"")+"umbrella coverage, for about <b>{planTotal} a month</b>."
     : "So my formal recommendation would be the <b>{planType}"+(kind==="supp" && hasPDP() ? " with prescription drug coverage" : "")+"</b>, at about <b>{planTotal} a month</b>.");
   return out.join("<br><br>");
 }
@@ -1859,8 +1880,6 @@ const STEPS = [
       text:()=>"Their own words, if you want to use them — "+
         [A("chsHistory")?"cancer / heart / stroke: <i>"+esc(A("chsHistory")).replace(/[{}]/g,"")+"</i>":"",
          A("snfHistory")?"skilled nursing: <i>"+esc(A("snfHistory")).replace(/[{}]/g,"")+"</i>":""].filter(Boolean).join(" · ")},
-    {t:"do", if:()=>["supp","ma"].includes(leanPick()) && recommendedUmbrella()>0,
-      text:"All in, that's <b>{planTotal} a month</b> — the price you quoted in pricing."},
     {t:"do", text:"<b>PAUSE. The first one to talk loses.</b>"}
   ]},
 
@@ -1870,7 +1889,15 @@ const STEPS = [
   blocks:[
     {t:"say", if:()=>isT65(), text:"Do you still have that piece of paper? Perfect — I want you to write this down, because this is how we will get everything done, in these 3 simple steps."},
     {t:"say", if:()=>isOnMedicare(), text:"Do you still have that piece of paper? Perfect — I want you to write this down, because this is how we will get everything done in these 3 simple steps."},
-    {t:"threesteps"}
+    {t:"threesteps"},
+    {t:"field", if:()=>isT65(), k:"step2Date", label:"Second appointment (step 2)", type:"mdy", w:"md",
+      hint:()=>{
+        const w = windowOpens();
+        const why = w && w > addDays(today0(),2)
+          ? "the day their enrollment window opens ("+fmtMDY(w)+")"
+          : "two days from today";
+        return "Leave blank to use "+fmtMDY(step2Auto())+" — "+why+". Type the date you actually book; step 3 moves with it.";
+      }}
   ]},
 
 { id:"urgency", sec:"Close", title:"Why we do this today",
@@ -2777,24 +2804,24 @@ function threeStepsHTML(){
   const noUmb = recommendedUmbrella()<=0;
   const price = leanPick() ? money(recommendedUmbrella()) : ph("umbrella price");
   const plan  = leanPick()==="supp" ? "Supplement" : leanPick()==="ma" ? "Advantage" : ph("Supplement / Advantage");
-  const lead  = leanPick()==="supp" ? "6 months" : leanPick()==="ma" ? "3 months" : ph("6 / 3 months");
-  const bm    = birthMonthName() ? "<b>"+birthMonthName()+"</b>" : ph("birth month");
   /* What the umbrella is made of, in the client's words — only what they selected. */
   const NAMES = {chsConcern:"cancer, heart attack and stroke coverage", snfConcern:"recovery care", dentalImport:"dental coverage"};
   const parts = leanPick() ? umbrella(leanPick()).rows.filter(r=>r.on && r.amt>0).map(r=>NAMES[r.k]) : [];
   const list = parts.length<2 ? parts.join("") : parts.slice(0,-1).join(", ")+" and "+parts[parts.length-1];
-  const umbStep = "We get your umbrella coverage set up for <b>"+price+"</b> per month, and that will be for your "+
+  const d1 = "<b>Today, "+fmtMDY(today0())+"</b> — ", d2 = "<b>"+fmtMDY(step2Day())+"</b> — ", d3 = "<b>"+fmtMDY(step3Day())+"</b> — ";
+  const umbStep = d1+"we get your umbrella coverage set up for <b>"+price+"</b> per month, and that will be for your "+
     (list ? "<b>"+list+"</b>" : ph("umbrellas they selected"))+".";
+  const planStep = d3+"once your Medicare card has arrived, we enroll you into your <b>"+plan+"</b> plan.";
   if(av==="t65noss"){
     title = "📋 Scenario A — T65, not on Social Security";
     steps = [umbStep,
-             "We manually enroll you into Original Medicare Parts A &amp; B three months before your birth month of "+bm+" — it takes about 10 minutes.",
-             "We enroll you into your <b>"+plan+"</b> plan "+lead+" before your 65th birthday."];
+             d2+"we get back together and manually enroll you into Original Medicare Parts A &amp; B. It takes about 10 minutes.",
+             planStep];
   } else {
     title = "📋 Scenario B — T65, on Social Security";
     steps = [umbStep,
-             "Since you're on Social Security you'll be automatically enrolled into Parts A &amp; B — we just confirm that's all set.",
-             "We enroll you into your <b>"+plan+"</b> plan "+lead+" before your 65th birthday."];
+             d2+"we get back together and confirm you've been automatically enrolled into Parts A &amp; B, since you're on Social Security.",
+             planStep];
   }
   if(noUmb) steps = steps.slice(1);
   return '<div class="b umb"><div class="umb-h">'+title+(noUmb?" · no umbrella to sell":"")+'</div><div class="umb-b goals">'+
@@ -2958,6 +2985,8 @@ function summaryLines(){
     if(leanPick()&&leanPick()!=="unsure")
       p("Recommended", recommendedPlanLabel()+" at "+money(recommendedTotal())+"/mo"+(recommendedUmbrella()>0?" all in":""));
     p("Effective date", A("effectiveDate"));
+    p("Second appointment (step 2)", fmtMDY(step2Day())+(A("step2Date")?"":" (default)"));
+    p("Plan enrollment (step 3)", fmtMDY(step3Day()));
   }
 
   L.push(["— CLOSE —",""]);
@@ -3167,6 +3196,7 @@ $("#blocks").addEventListener("input", e=>{
   if(!el.dataset.k) return;
   if(el.dataset.mdy!==undefined){
     const before = A(el.dataset.k), it = e.inputType||"";
+    const wasOk = dateStatus(el.dataset.k).state==="ok";
     maskDate(el, {
       deleting : it.startsWith("delete"),
       pasted   : it==="insertFromPaste" || it==="insertFromDrop" || it==="",
@@ -3176,7 +3206,9 @@ $("#blocks").addEventListener("input", e=>{
     paintDate(el);
     /* A finished date can switch the California rule on or off, so redraw the
        whole step — then hand focus straight back to the agent. */
-    if(dateStatus(el.dataset.k).state==="ok" && el.value!==before){
+    /* also redraw when a finished date is broken or cleared, so anything
+       computed from it (age, the 3-step timeline) falls back straight away */
+    if(el.value!==before && (dateStatus(el.dataset.k).state==="ok" || wasOk)){
       const k = el.dataset.k;
       render();
       const again = document.querySelector('[data-k="'+k+'"]');
