@@ -868,8 +868,8 @@ const STEPS = [
     ]},
     {t:"say", if:()=>A("webinarDone")==="yes",
       text:"Awesome, and that webinar is designed to give you a general overview of what your transition to Medicare looks like. On this call we'll dive into your specific situation."},
-    {t:"do", if:()=>A("webinarDone")==="no",
-      text:"The script has no line for this yet — keep it short and carry on to the recording disclosure."}
+    {t:"say", if:()=>A("webinarDone")==="no",
+      text:"No worries, that webinar is designed to give you a general overview of what your transition to Medicare looks like. On this call we'll dive into your specific situation."}
   ]},
 
 { id:"recording", sec:"Opening", title:"Call recording disclosure",
