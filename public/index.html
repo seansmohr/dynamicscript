@@ -858,9 +858,18 @@ const STEPS = [
 
 { id:"greeting", sec:"Opening", title:"Greeting & webinar confirmation",
   blocks:[
-    {t:"say", text:"Hey {name}, this is {agent} with Mohr Insurance Services calling for our scheduled Medicare appointment… how are you today?"},
+    {t:"say", text:"Hey {name}, this is {agent} with Mohr Insurance Services calling for our scheduled Medicare appointment… how's it going today?"},
     {t:"do", text:"Wait for their response."},
-    {t:"say", text:"Thank you for booking the call today. Hopefully I'll be able to help you out and answer any questions."}
+    {t:"say", text:"Looks like you made it through our webinar?"},
+    {t:"do", text:"Wait for the response."},
+    {t:"choice", k:"webinarDone", label:"Did they make it through the webinar?", opts:[
+      {v:"yes", l:"Yes — made it through"},
+      {v:"no",  l:"No / only part of it"}
+    ]},
+    {t:"say", if:()=>A("webinarDone")==="yes",
+      text:"Awesome, and that webinar is designed to give you a general overview of what your transition to Medicare looks like. On this call we'll dive into your specific situation."},
+    {t:"do", if:()=>A("webinarDone")==="no",
+      text:"The script has no line for this yet — keep it short and carry on to the recording disclosure."}
   ]},
 
 { id:"recording", sec:"Opening", title:"Call recording disclosure",
@@ -2751,6 +2760,7 @@ function summaryLines(){
   const p=(k,v)=>{ if(v!==""&&v!=null) L.push([k,v]); };
   L.push(["— CALL —",""]);
   p("Agent", A("agentName")); p("Client", A("clientName")||A("clientFirst"));
+  p("Made it through webinar", A("webinarDone"));
   p("Date", new Date().toLocaleString());
   p("Route", av?AVATARS[av].label:"not determined");
   if(caRestricted()) p("Compliance",
