@@ -889,7 +889,7 @@ const STEPS = [
     ? "A yes here sends the whole call down the already-on-Medicare track — its own needs assessment, starting right after the goals."
     : "A yes here means they're already on Medicare. That script is paused — the call goes to a short holding step after the goals.",
   blocks:[
-    {t:"say", text:"Before we go further, are you currently enrolled in Medicare Parts A and B?"},
+    {t:"say", text:"And are you currently enrolled in Medicare Parts A and B?"},
     {t:"choice", k:"onMedicare", label:"Parts A & B active?", opts:[
       {v:"yes",l:"Yes — active", sub:()=> MEDICARE_TRACK_LIVE ? "→ Education (Already on Medicare)" : "→ Script paused — book a follow-up"},
       {v:"no", l:"No — not yet",  sub:"→ CNA, then employer or T65"},
