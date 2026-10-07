@@ -2714,7 +2714,12 @@ function threeStepsHTML(){
   const plan  = leanPick()==="supp" ? "Supplement" : leanPick()==="ma" ? "Advantage" : ph("Supplement / Advantage");
   const lead  = leanPick()==="supp" ? "6 months" : leanPick()==="ma" ? "3 months" : ph("6 / 3 months");
   const bm    = birthMonthName() ? "<b>"+birthMonthName()+"</b>" : ph("birth month");
-  const umbStep = "We get your "+(blocked?"dental ":"")+"umbrella coverage set up for <b>"+price+"</b> a month.";
+  /* What the umbrella is made of, in the client's words — only what they selected. */
+  const NAMES = {chsConcern:"cancer, heart attack and stroke coverage", snfConcern:"recovery care", dentalImport:"dental coverage"};
+  const parts = leanPick() ? umbrella(leanPick()).rows.filter(r=>r.on && r.amt>0).map(r=>NAMES[r.k]) : [];
+  const list = parts.length<2 ? parts.join("") : parts.slice(0,-1).join(", ")+" and "+parts[parts.length-1];
+  const umbStep = "We get your umbrella coverage set up for <b>"+price+"</b> per month, and that will be for your "+
+    (list ? "<b>"+list+"</b>" : ph("umbrellas they selected"))+".";
   if(av==="t65noss"){
     title = "📋 Scenario A — T65, not on Social Security";
     steps = [umbStep,
