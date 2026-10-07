@@ -143,7 +143,11 @@ Under the California restriction only the dental component survives, and the ove
 
 The agent works the price out on the pricing step before talking cost:
 
-- **Supplement** = Supplement (Plan G) + PDP (≈ $10) + CHS + RC + Dental
+- **Supplement** = Supplement (Plan G) + PDP + CHS + RC + Dental
+
+The PDP is only in the quote when the agent types a premium for it — a $0 drug plan
+counts; a blank box means no PDP. With no umbrella, the recommendation then says
+"Medicare Supplement with prescription drug coverage" or just "Medicare Supplement".
 - **Advantage** = MAPD (usually $0) + CHS + RC
 
 CHS is the cancer / heart attack / stroke piece and RC (recovery care) is the skilled

@@ -761,7 +761,10 @@ function umbrella(kind){
 const money = n => "$" + (Math.round(Number(n)||0)).toLocaleString();
 const num   = v => { const n = parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isFinite(n)?n:0; };
 
-function suppTotal(){ return num(A("planGPremium")) + num(A("partDPremium")||10) + umbrella("supp").value; }
+/* A drug plan is part of the Supplement quote only when the agent typed a PDP
+   premium — $0 included, since some drug plans are $0. Blank means no PDP. */
+const hasPDP = () => String(A("partDPremium")??"").trim()!=="";
+function suppTotal(){ return num(A("planGPremium")) + (hasPDP() ? num(A("partDPremium")) : 0) + umbrella("supp").value; }
 function maTotal(){   return num(A("mapdPremium")||0) + umbrella("ma").value; }
 
 /* v10: a client who leaned one way at the start of education only gets that
@@ -791,7 +794,7 @@ function quotePieces(kind, again){
   const P = [];
   if(kind==="supp"){
     P.push({code:"Supplement", amt:num(A("planGPremium"))});
-    P.push({code:"PDP", why:"this is your prescription drug plan", amt:num(A("partDPremium")||10)});
+    if(hasPDP()) P.push({code:"PDP", why:"this is your prescription drug plan", amt:num(A("partDPremium"))});
   } else {
     P.push({code:"MAPD", why:"this is your Medicare plan with prescription drug coverage", amt:num(A("mapdPremium")||0)});
   }
@@ -836,7 +839,9 @@ function rationaleHTML(){
   const glist = gs.length<2 ? gs.map(quote).join("")
     : gs.slice(0,-1).map(quote).join(", ")+" and "+quote(gs[gs.length-1]);
   const plan = "<b>"+(kind==="supp"?"Medicare Supplement":"Medicare Advantage")+"</b>";
-  const tied = GOAL_TOPICS.filter(t=> t[kind] && gs.some(g=>t.re.test(g))).map(t=>t[kind]);
+  const tied = GOAL_TOPICS.filter(t=> t[kind] && gs.some(g=>t.re.test(g)))
+    .filter(t=> !(kind==="supp" && t.k==="drugs" && !hasPDP()))
+    .map(t=>t[kind]);
   const why = PLAN_WHY[kind]+"."+(tied.length ? " "+tied.join(" ") : "");
   if(gs.length){
     out.push("Based on everything you shared today — you told me what you wanted out of today: <b>"+glist+"</b>.");
@@ -854,7 +859,7 @@ function rationaleHTML(){
 
   out.push(u.value>0
     ? "So my formal recommendation would be the <b>{planType}</b>, with "+(caRestricted()?"dental ":"")+"umbrella coverage for about <b>{umbPrice} a month</b>."
-    : "So my formal recommendation would be the <b>{planType}</b>, at about <b>{planTotal} a month</b>.");
+    : "So my formal recommendation would be the <b>{planType}"+(kind==="supp" && hasPDP() ? " with prescription drug coverage" : "")+"</b>, at about <b>{planTotal} a month</b>.");
   return out.join("<br><br>");
 }
 
@@ -2069,9 +2074,9 @@ function prefillEmail(){
        agent ticks MAPD and types the new plan if and when there is one. */
   } else if(sc==="t65noss" || sc==="t65ss"){
     if(leanPick()==="supp"){
-      on("supp"); on("pdp");
+      on("supp");
       put("supp","premium", A("planGPremium")); put("supp","plan","G");
-      put("pdp","premium", A("partDPremium") || 10);
+      if(hasPDP()){ on("pdp"); put("pdp","premium", A("partDPremium")); }
     } else if(leanPick()==="ma"){
       on("mapd");
       put("mapd","premium", A("mapdPremium") || 0);
@@ -2692,13 +2697,13 @@ function priceCalcHTML(){
   const cols = [];
   if(lean!=="ma")   cols.push(side("supp","Medicare Supplement", suppTotal()));
   if(lean!=="supp") cols.push(side("ma","Medicare Advantage", maTotal()));
-  return '<div class="b"><div class="ucols"'+(cols.length===1?' style="grid-template-columns:1fr;max-width:420px"':"")+'>'+cols.join("")+"</div></div>";
+  return '<div class="b" id="priceCalc"><div class="ucols"'+(cols.length===1?' style="grid-template-columns:1fr;max-width:420px"':"")+'>'+cols.join("")+"</div></div>";
 }
 function priceInputsHTML(){
   const lean = earlyLean();
   return '<div class="b"><div class="frow">'+
     (lean!=="ma" ? fieldHTML({k:"planGPremium", label:"Supplement (Plan G) / mo", ph:"$", w:"md"})+
-                   fieldHTML({k:"partDPremium", label:"PDP / mo", ph:"$10", w:"sm"}) : "")+
+                   fieldHTML({k:"partDPremium", label:"PDP / mo", ph:"e.g. $10", w:"sm", hint:"Blank = no PDP"}) : "")+
     (lean!=="supp" ? fieldHTML({k:"mapdPremium", label:"MAPD / mo", ph:"$0", w:"sm"}) : "")+
     "</div></div>";
 }
@@ -2945,7 +2950,7 @@ function summaryLines(){
     p("Advantage umbrella",  money(umbrella("ma").value)+(umbrella("ma").overridden?" (override)":""));
     L.push(["— PRICING —",""]);
     p("Leaning at start of education", ({supp:"Medicare Supplement",ma:"Medicare Advantage",unfamiliar:"Not familiar — covered both"})[A("eduLean")]||"");
-    p("Plan G premium", A("planGPremium")); p("Part D", A("partDPremium")||"10");
+    p("Plan G premium", A("planGPremium")); p("PDP", hasPDP() ? A("partDPremium") : "none");
     p("Supplement total", money(suppTotal()));
     p("MAPD premium", A("mapdPremium")||"0");
     p("Advantage total", money(maTotal()));
@@ -3189,6 +3194,9 @@ $("#blocks").addEventListener("input", e=>{
   }
   set(el.dataset.k, el.value);
   refill(); renderRail();
+  /* the pricing calculation sits beside the inputs, so keep it live too */
+  const calc = document.getElementById("priceCalc");
+  if(calc) calc.outerHTML = priceCalcHTML();
 });
 
 /* Apply an edit to either half of the zip/state pair. */
