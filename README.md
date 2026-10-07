@@ -64,16 +64,11 @@ the new version on their next reload — no cache-busting to think about.
 **A client who is 65 or older in California cannot be sold cancer / heart attack / stroke
 cover or skilled nursing cover.** Since neither can be sold, the tool does not embed either
 exposure: the major-exposures set-up, the CHS conversation and the skilled nursing
-conversation are skipped entirely on both tracks that carry them.
+conversation are skipped entirely.
 
 **On the T65 track, dental can still be sold.** The dental question is still asked as normal
 and still prices $50 into the Medicare Supplement umbrella. That leaves the Advantage
 umbrella at $0, since an Advantage plan already bundles dental.
-
-On the already-on-Medicare track the product is Gold / Silver / Bronze, so a restricted
-client gets the California variant close instead: on the Advantage side the October review
-appointment is the deliverable, and on the Supplement side the supplement move itself is
-the sale.
 
 Gold / Silver / Bronze *is* cancer, heart attack and stroke cover, so it cannot be sold
 either. On the employer track there is no Medicare plan to offer in its place, so that call
@@ -82,51 +77,48 @@ ends after the delay recommendation and the CMS L564 education.
 The zip code and date of birth decide all of this. Overrides are switched off while the
 restriction applies; correcting a wrong zip or date of birth is the only way it clears.
 
-## The four tracks
+## The tracks (script version 10)
 
 The route is decided automatically from the client's own answers, in this order:
 
-1. **Currently on Medicare** — Parts A & B active. Exits right after the goals loop.
-2. **Employer coverage** — still working, **over 20 employees**. Exits at the work-status question.
+1. **Currently on Medicare** — Parts A & B active. **Paused** — see below.
+2. **Employer coverage** — still working, **over 20 employees**.
 3. **T65 — on Social Security** — not on Medicare, drawing Social Security
 4. **T65 — not on Social Security** — everyone else
 
-An employer plan with **20 or fewer employees** means they must transition to Medicare, so
-those clients stay in the needs assessment and run the T65 track. The agent can override
-the route on the CNA close screen.
+Every client who is not already on Medicare runs the **full needs assessment, every
+question** — employer clients included. The route only changes what comes after it.
+An employer plan with **20 or fewer employees** means they must transition to Medicare,
+so those clients run the T65 track. The agent can override the route on the CNA close screen.
 
-### Each track has its own questions
+- **Employer** — delay Part A and Part B entirely (whether or not they draw Social
+  Security) → no penalty with creditable coverage → CMS L564 with the Part A and Part B
+  application, "your hall pass that voids all penalties" → max out of pocket and loss of
+  income → Gold / Silver / Bronze → explain the why (lock in the rate while health and age
+  are on their side) → commitment → address. No Supplement, Advantage or umbrella.
+- **T65** — opens with *"are you familiar with the two? Are you leaning towards one way or
+  the other?"* Leaning Supplement gets the two-sentence Part A & B summary and the
+  Supplement education only; leaning Advantage gets the summary and the Advantage
+  education only; not familiar gets both, plus the line-down-the-middle paper exercise.
+  Pricing always shows both options, and the leaning question is asked again after it.
+  Closes on Scenario A (not on SS) or B (on SS).
 
-Because two of the tracks exit before the shared needs assessment, they ask their own:
+### Already on Medicare — paused
 
-- **Employer** — Social Security status, whether the plan is through the employer, carrier,
-  HMO/PPO, premium, max out of pocket, and whether they've hit it. Then delay Medicare →
-  CMS L564 → Gold / Silver / Bronze. No Supplement, Advantage or umbrella on this track.
-  Drawing Social Security changes the recommendation to "delay Part B only" and the L564
-  instructions to the Part B application alone.
-- **Already on Medicare** — zip, date of birth and carrier, then a second branch point:
-  *"is that a Medicare Advantage or Medicare Supplement plan?"* Each side is self-contained
-  and does not run the Supplement vs Advantage education or the pricing comparison.
-  - **4A Advantage** — HMO/PPO, premium, max out of pocket, the cancer/heart/stroke
-    exposure, then a timing check. Anything changed recently, or mail about the plan
-    changing, or today falling inside Oct 15 – Dec 7, routes them to the in-AEP close;
-    otherwise they are locked until October. Outside AEP closes in two steps (umbrella
-    today, October review booked live); in AEP it closes in three (umbrella, full review
-    inside 48 hours, effective date).
-  - **4B Supplement** — premium, then the federal standardization pitch: a Plan G is a
-    Plan G by law, so the only difference is price. The agent types the carrier and price
-    they would move them to and the tool works out the monthly and annual saving. Closes in
-    three steps, with the emphasis that nothing gets cancelled until the new plan is active.
-- **T65** — the full needs assessment, then the Medicare education. On SS gets the
-  automatic-enrollment paragraph and "deducted from your check"; not on SS gets the
-  manual-enrollment paragraph and "billed for the first quarter." Closes on Scenario A or B.
+The already-on-Medicare script is being rewritten, so it is switched off. The eligibility
+question still identifies these clients; after the goals loop the call goes to a short
+holding step (zip, date of birth, carrier, what they have, follow-up) instead of a script.
+The on-Medicare email scenarios are hidden too.
+
+The old branch 4A / 4B is still in `public/index.html`, dormant, gated on
+`MEDICARE_TRACK_LIVE`. Set it to `true` to bring it back exactly as it was.
 
 ## Umbrella pricing
 
 Three answers in the needs assessment price the umbrella. Nothing else touches it.
 
-This applies to the **T65 track only**. Employer-coverage clients and clients already on
-Medicare are sold Gold / Silver / Bronze ($150 / $100 / $50) instead.
+This applies to the **T65 track only**. Employer-coverage clients are sold
+Gold / Silver / Bronze ($150 / $100 / $50) instead.
 
 | CNA answer | Medicare Supplement | Medicare Advantage |
 |---|---|---|
